@@ -1,4 +1,4 @@
-package com.unla.museo.models;
+package com.unla.museo.entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
