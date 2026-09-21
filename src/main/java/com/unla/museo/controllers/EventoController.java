@@ -1,6 +1,8 @@
 package com.unla.museo.controllers;
 
-import com.unla.museo.models.Evento;
+import com.unla.museo.constants.Roles;
+import com.unla.museo.controllers.annotations.RequiresRoles;
+import com.unla.museo.entities.Evento;
 import com.unla.museo.services.EventoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -27,7 +29,7 @@ public class EventoController {
     public ResponseEntity<Evento> crear(@RequestBody Evento evento) {
         return new ResponseEntity<>(eventoService.crear(evento), HttpStatus.CREATED);
     }
-
+    @RequiresRoles({Roles.ADMIN,Roles.CURADOR})
     @GetMapping("/exportar")
     public ResponseEntity<byte[]> exportarExcel() {
         try {
