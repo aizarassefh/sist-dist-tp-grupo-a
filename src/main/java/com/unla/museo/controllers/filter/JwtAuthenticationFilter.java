@@ -20,19 +20,18 @@ import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Filtro de autenticación JWT que valida y procesa tokens en cada request.
  *
- * Busca el token en el header Authorization con formato "Bearer <token>"
- * Extrae permisos del JWT y los mapea a SimpleGrantedAuthority
- * Establece el SecurityContext para uso en @RequiresRoles y authorization
+ * Busca el token en el header Authorization con formato "Bearer <token>".
+ * Extrae el rol único del JWT y lo mapea a una autoridad de Spring Security.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+    private static final String ROLE_PREFIX = "ROLE_";
 
     @Value("${jwt.secret}")
     private String secret;
@@ -54,8 +53,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-
-            // Valida firma y expiración automáticamente
             Claims claims = Jwts.parser()
                     .verifyWith(key)
                     .build()
@@ -63,25 +60,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .getPayload();
 
             String username = claims.getSubject();
+            String role = claims.get("role", String.class);
 
-            List<String> permissions = claims.get("permissions", List.class);
-
-            // Null-safety: si permissions es null, usar lista vacía
-            if (permissions == null) {
-                permissions = Collections.emptyList();
+            if (username == null || username.isBlank() || role == null || role.isBlank()) {
+                throw new IllegalArgumentException("JWT does not contain subject and role");
             }
 
-            logger.debug("JWT validated for user: {} with permissions: {}", username, permissions);
-
-            List<SimpleGrantedAuthority> authorities = permissions.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .toList();
-
+            SimpleGrantedAuthority authority = new SimpleGrantedAuthority(ROLE_PREFIX + role);
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(username, null, authorities);
+                    new UsernamePasswordAuthenticationToken(username, null, Collections.singletonList(authority));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            logger.debug("SecurityContext set for user: {} with {} authorities", username, authorities.size());
+            logger.debug("JWT validated for user: {} with role: {}", username, role);
 
         } catch (Exception e) {
             logger.warn("JWT validation failed for request to {}: {}", request.getRequestURI(), e.getMessage());

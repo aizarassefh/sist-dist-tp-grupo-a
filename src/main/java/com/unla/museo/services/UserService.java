@@ -10,6 +10,6 @@ public interface UserService {
 
     boolean validateCredentials(String username, String rawPassword);
 
-    UserTO getById(long id);
+    UserTO getByEmail(String email);
 
 }

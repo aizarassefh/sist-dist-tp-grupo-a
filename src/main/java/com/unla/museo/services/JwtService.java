@@ -2,52 +2,28 @@ package com.unla.museo.services;
 
 import io.jsonwebtoken.Claims;
 
-import java.util.List;
-
 /**
- * Servicio unificado para gestión de tokens JWT y Refresh Tokens
+ * Servicio unificado para gestión de tokens JWT.
  */
 public interface JwtService {
 
     /**
-     * Genera un Access Token JWT firmado
-     * @param username nombre del usuario
-     * @return Access Token JWT
+     * Genera un Access Token JWT firmado con el rol único del usuario.
      */
     String generateAccessToken(String username);
 
     /**
-     * Genera un Refresh Token y lo almacena en BD
-     * @param email email del usuario
-     * @return entidad del Refresh Token
-     */
-
-    /**
-     * Extrae todos los claims del JWT
-     * @param token token JWT
-     * @return claims del token
+     * Extrae todos los claims del JWT.
      */
     Claims extractAllClaims(String token);
 
     /**
-     * Extrae el username del JWT
-     * @param token token JWT
-     * @return email del usuario
+     * Extrae el username del JWT.
      */
     String extractUsername(String token);
 
     /**
-     * Extrae la lista de permisos del JWT
-     * @param token token JWT
-     * @return lista de permisos
-     */
-    List<String> extractPermissions(String token);
-
-    /**
-     * Valida que el JWT sea válido (firma y no expirado)
-     * @param token token JWT
-     * @return true si es válido, false en caso contrario
+     * Valida que el JWT sea válido (firma y no expirado).
      */
     boolean isTokenValid(String token);
-
 }

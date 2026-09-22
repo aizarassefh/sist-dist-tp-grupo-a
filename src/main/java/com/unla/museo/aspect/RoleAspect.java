@@ -15,7 +15,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Arrays;
-
+import java.util.List;
 
 @Aspect
 @Component
@@ -36,38 +36,40 @@ public class RoleAspect {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(
-                            HttpStatus.UNAUTHORIZED,
-                            "Missing or invalid Authorization header.",
-                            null,
-                            null
-                    ),
-                    HttpStatus.UNAUTHORIZED
-            );
+            return unauthorizedResponse("Missing or invalid Authorization header.");
         }
 
         String token = authHeader.substring(7);
+        List<String> requiredRoles = Arrays.asList(requiresRoles.value());
 
-        var requiredRoles = Arrays.asList(requiresRoles.value());
-        boolean allowed = JwtHelper.verifyUserRoleFromToken(
-                token,
-                requiredRoles,
-                secret
-        );
-
-        if (!allowed) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(
-                            HttpStatus.FORBIDDEN,
-                            "User does not have permissions to perform this action.",
-                            null,
-                            null
-                    ),
-                    HttpStatus.FORBIDDEN
-            );
+        try {
+            boolean allowed = JwtHelper.verifyUserRoleFromToken(token, requiredRoles, secret);
+            if (!allowed) {
+                return forbiddenResponse();
+            }
+        } catch (IllegalArgumentException exception) {
+            return unauthorizedResponse("Invalid or expired token.");
         }
 
         return joinPoint.proceed();
+    }
+
+    private ResponseEntity<ErrorResponse> unauthorizedResponse(String message) {
+        return new ResponseEntity<>(
+                new ErrorResponse(HttpStatus.UNAUTHORIZED, message, null, null),
+                HttpStatus.UNAUTHORIZED
+        );
+    }
+
+    private ResponseEntity<ErrorResponse> forbiddenResponse() {
+        return new ResponseEntity<>(
+                new ErrorResponse(
+                        HttpStatus.FORBIDDEN,
+                        "User role is not authorized to perform this action.",
+                        null,
+                        null
+                ),
+                HttpStatus.FORBIDDEN
+        );
     }
 }

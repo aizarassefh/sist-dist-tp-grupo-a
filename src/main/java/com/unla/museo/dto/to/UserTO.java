@@ -12,8 +12,6 @@ public class UserTO {
 
     private String lastName;
 
-    private String dni;
-
     private String role;
 
     private String phoneNumber;

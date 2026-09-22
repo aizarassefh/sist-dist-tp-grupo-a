@@ -18,13 +18,7 @@ public class UserCreateRequest {
     @NotBlank(message = "El apellido es obligatorio")
     private String lastName;
 
-    private String roleId;
-
-    @NotNull(message = "El número es obligatorio")
     private String phoneNumber;
-
-    @NotNull(message = "El estado del usuario es obligatorio")
-    private boolean active;
 
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 8, max = 100, message = "La contraseña debe estar entre los 8 y 100 caracteres")

@@ -1,0 +1,155 @@
+{
+    "info": {
+        "name": "Sistemas distribuidos",
+        "description": "",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Create user",
+            "description": "",
+            "event": [],
+            "auth": {},
+            "request": {
+                "auth": {},
+                "method": "POST",
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"assefhluciano@gmail.com\",\n    \"firstName\":\"Luciano\",\n    \"lastName\":\"Assefh\",\n    \"password\":\"P4assword$!\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8000/api/auth/register",
+                    "path": [
+                        "api",
+                        "auth",
+                        "register"
+                    ],
+                    "host": [
+                        "localhost"
+                    ],
+                    "protocol": "http",
+                    "port": "8000",
+                    "query": [],
+                    "variable": []
+                }
+            },
+            "response": [],
+            "protocolProfileBehavior": {
+                "strictSSL": false,
+                "followRedirects": true
+            }
+        },
+        {
+            "name": "Login",
+            "description": "",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var jsonData = JSON.parse(pm.response.text());",
+                            "postman.setEnvironmentVariable(\"app-token\", jsonData.accessToken);",
+                            "",
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "auth": {},
+            "request": {
+                "auth": {},
+                "method": "POST",
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"assefhluciano@gmail.com\",\n    \"password\":\"P4assword$!\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8000/api/auth/login",
+                    "path": [
+                        "api",
+                        "auth",
+                        "login"
+                    ],
+                    "host": [
+                        "localhost"
+                    ],
+                    "protocol": "http",
+                    "port": "8000",
+                    "query": [],
+                    "variable": []
+                }
+            },
+            "response": [],
+            "protocolProfileBehavior": {
+                "strictSSL": false,
+                "followRedirects": true
+            }
+        },
+        {
+            "name": "Me",
+            "description": "",
+            "event": [],
+            "auth": {},
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{app-token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"assefhluciano@gmail.com\",\n    \"password\":\"P4assword$!\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8000/api/auth/me",
+                    "path": [
+                        "api",
+                        "auth",
+                        "me"
+                    ],
+                    "host": [
+                        "localhost"
+                    ],
+                    "protocol": "http",
+                    "port": "8000",
+                    "query": [],
+                    "variable": []
+                }
+            },
+            "response": [],
+            "protocolProfileBehavior": {
+                "strictSSL": false,
+                "followRedirects": true
+            }
+        }
+    ],
+    "variable": [],
+    "event": [],
+    "auth": {}
+}

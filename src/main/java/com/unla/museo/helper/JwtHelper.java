@@ -8,7 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
+
 public class JwtHelper {
 
     /**
@@ -29,16 +29,14 @@ public class JwtHelper {
         }
     }
 
-    public static boolean verifyUserRoleFromToken(String idToken, List<String> rolesRequest, String secret) {
-        return verifyUserRoleFromToken(idToken, rolesRequest, true, secret);
-    }
-
-    public static boolean verifyUserRoleFromToken(String idToken, List<String>  rolesRequest, boolean requireAll, String secret) {
+    /**
+     * Verifica que el rol único del token coincida con cualquiera de los roles requeridos.
+     */
+    public static boolean verifyUserRoleFromToken(String idToken, List<String> requiredRoles, String secret) {
         try {
             Claims claims = decodeToken(idToken, secret);
-            String role = extractRole(claims);
-            return role != null && rolesRequest.contains(role);
-
+            String role = claims.get("role", String.class);
+            return role != null && requiredRoles != null && requiredRoles.contains(role);
         } catch (JwtException | IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid Id-Token", e);
         }
@@ -63,12 +61,5 @@ public class JwtHelper {
         } catch (JwtException | IllegalArgumentException e) {
             throw new IllegalArgumentException("Token inválido", e);
         }
-    }
-
-
-    private static String extractRole(Claims claims) {
-        Object roleClaim = claims.get("role");
-
-        return Objects.isNull(roleClaim) ? null : roleClaim.toString();
     }
 }

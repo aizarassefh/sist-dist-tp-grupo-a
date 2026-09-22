@@ -1,6 +1,7 @@
 package com.unla.museo.services.impl;
 
 
+import com.unla.museo.constants.Roles;
 import com.unla.museo.dto.request.UserCreateRequest;
 import com.unla.museo.dto.to.UserTO;
 import com.unla.museo.entities.RoleEntity;
@@ -43,7 +44,7 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistsException(ErrorMessage.User.CONFLICT_EMAIL);
         }
-        RoleEntity roleEntity = roleRepository.findById(request.getRoleId())
+        RoleEntity roleEntity = roleRepository.findById(Roles.VISITANTE)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorMessage.User.Role.NOT_FOUND));
         UserEntity user = userMapper.toEntity(request,roleEntity,request.getEmail());
         user.setPassword(this.passwordEncoder.encode(request.getPassword()));
@@ -60,8 +61,8 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BadCredentialsException(ErrorMessage.AUTH_FAILED));
     }
 
-    public UserTO getById(long id) {
-        UserEntity user = userRepository.findById(id)
+    public UserTO getByEmail(String userEmail) {
+        UserEntity user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UserNotFoundException(ErrorMessage.User.NOT_FOUND));
         return userMapper.toResponse(user);
     }

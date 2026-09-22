@@ -23,7 +23,7 @@ public class UserMapper {
         entity.setRole(role);
         entity.setCreatedBy(createdBy);
         entity.setCreation(LocalDateTime.now());
-        entity.setActive(null);
+        entity.setActive(true);
         return entity;
     }
 
@@ -37,6 +37,7 @@ public class UserMapper {
         response.setEmail(entity.getEmail());
         response.setFirstName(entity.getFirstName());
         response.setLastName(entity.getLastName());
+        response.setPhoneNumber(entity.getPhoneNumber());
         response.setRole(entity.getRole() != null ? entity.getRole().getName() : null);
         return response;
     }

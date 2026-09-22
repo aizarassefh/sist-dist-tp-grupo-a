@@ -4,6 +4,7 @@ import com.unla.museo.controllers.util.LinksApi;
 import com.unla.museo.dto.request.LoginRequest;
 import com.unla.museo.dto.request.UserCreateRequest;
 import com.unla.museo.dto.response.LoginResponse;
+import com.unla.museo.dto.to.UserTO;
 import com.unla.museo.services.impl.JwtServiceImpl;
 import com.unla.museo.services.impl.UserServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -40,6 +42,14 @@ public class AuthController {
     public ResponseEntity<String> register(@Valid @RequestBody UserCreateRequest request) {
         userService.create(request);
         return ResponseEntity.status(HttpStatus.OK).body("Usuario creado correctamente");
+    }
+
+
+    @GetMapping(value = LinksApi.AuthEndpoints.ME, produces = { "application/json" })
+    public ResponseEntity<UserTO> getUserById(Authentication authentication) {
+        String requestEmail = authentication.getName();
+        UserTO response = this.userService.getByEmail(requestEmail);
+        return ResponseEntity.ok(response);
     }
 
 

@@ -16,11 +16,9 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.List;
 
 /**
- * Servicio unificado para gestión de JWT y Refresh Tokens
- * Fusiona la funcionalidad de JwtServiceImpl y RefreshTokenServiceImpl
+ * Servicio para la generación y validación de tokens JWT.
  */
 @Service
 public class JwtServiceImpl implements JwtService {
@@ -63,10 +61,6 @@ public class JwtServiceImpl implements JwtService {
     }
 
     /**
-     * Genera un Refresh Token y lo almacena en BD
-     */
-
-    /**
      * Parsea y valida el token completo (firma y expiración)
      */
     @Override
@@ -84,15 +78,6 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
-    }
-
-    /**
-     * Extrae la lista de permisos guardados en el claim "permissions"
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    public List<String> extractPermissions(String token) {
-        return extractAllClaims(token).get("permissions", List.class);
     }
 
     /**
@@ -117,8 +102,8 @@ public class JwtServiceImpl implements JwtService {
                 .orElseThrow(() -> new UserNotFoundException(ErrorMessage.User.NOT_FOUND));
 
 
-        if (user.getRole() == null ) {
-            return null;
+        if (user.getRole() == null) {
+            throw new IllegalStateException("El usuario no tiene un rol asignado");
         }
 
         return user.getRole();

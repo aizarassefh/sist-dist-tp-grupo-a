@@ -51,7 +51,12 @@ public class SecurityConfig {
                         // Rutas públicas - Documentación
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Rutas públicas - Autenticación
-                         .requestMatchers(LinksApi.AuthEndpoints.LOGIN,LinksApi.AuthEndpoints.REGISTER,LinksApi.AuthEndpoints.LOGOUT).permitAll()
+                        .requestMatchers(
+                                LinksApi.AuthEndpoints.LOGIN,
+                                LinksApi.AuthEndpoints.REGISTER,
+                                LinksApi.AuthEndpoints.LOGIN + "/",
+                                LinksApi.AuthEndpoints.REGISTER + "/"
+                        ).permitAll()
                         // Todas las otras rutas requieren autenticación
                         .anyRequest().authenticated()
                 )
