@@ -1,0 +1,81 @@
+type Query {
+    saludo: String
+
+    obras(
+        filtro: FiltroObras
+        pagina: Int
+        tamanio: Int
+    ): [Obra]
+
+    reporteAsistencia(filtro: FiltroReporte): ReporteAsistencia
+}
+type Obra {
+    id: ID!
+    titulo: String!
+    artista: Artista!
+    imagenUrl: String
+    anioCreacion: Int
+    tecnica: String
+    dimensiones: String
+    epoca: String
+    descripcion: String
+    ubicacion: String
+    enExhibicion: Boolean
+    comentarios: [Comentario!]!
+}
+type Artista {
+    nombre: String!
+    biografia: String!
+}
+
+type Comentario {
+    usuario: String!
+    texto: String!
+    fecha: String!
+}
+input FiltroObras {
+    palabraClave: String
+    epoca: String
+    tecnica: String
+    ubicacion: String
+    enExhibicion: Boolean
+}
+input FiltroReporte {
+    desde: String
+    hasta: String
+    tipo: String
+    estado: EstadoEvento
+    agruparPor: AgruparPor
+}
+
+enum EstadoEvento {
+    PASADOS
+    FUTUROS
+    TODOS
+}
+
+enum AgruparPor {
+    MES
+    TIPO
+    MES_Y_TIPO
+}
+
+type ReporteAsistencia {
+    fechaCorte: String!
+    grupos: [GrupoReporte!]!
+}
+
+type GrupoReporte {
+    mes: String
+    tipo: String
+    cantidadDeEventos: Int!
+    totalInscriptosAcumulados: Int!
+    promedioDeAsistencia: Float!
+    eventosMasPopulares: [EventoPopular!]!
+}
+
+type EventoPopular {
+    id: ID!
+    titulo: String!
+    cantidadInscriptos: Int!
+}
