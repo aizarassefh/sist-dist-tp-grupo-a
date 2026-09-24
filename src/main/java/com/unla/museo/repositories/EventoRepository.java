@@ -1,6 +1,6 @@
 package com.unla.museo.repositories;
 
-import com.unla.museo.models.Evento;
+import com.unla.museo.entities.Evento;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
