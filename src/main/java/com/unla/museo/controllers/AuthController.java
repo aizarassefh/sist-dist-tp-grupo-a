@@ -14,7 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
 public class AuthController {
@@ -45,12 +46,15 @@ public class AuthController {
     }
 
 
-    @GetMapping(value = LinksApi.AuthEndpoints.ME, produces = { "application/json" })
-    public ResponseEntity<UserTO> getUserById(Authentication authentication) {
-        String requestEmail = authentication.getName();
-        UserTO response = this.userService.getByEmail(requestEmail);
-        return ResponseEntity.ok(response);
-    }
-
+   @Operation(
+    summary = "Obtener usuario autenticado",
+    security = @SecurityRequirement(name = "bearerAuth")
+)
+@GetMapping(value = LinksApi.AuthEndpoints.ME, produces = {"application/json"})
+public ResponseEntity<UserTO> getUserById(Authentication authentication) {
+    String requestEmail = authentication.getName();
+    UserTO response = this.userService.getByEmail(requestEmail);
+    return ResponseEntity.ok(response);
+}
 
 }

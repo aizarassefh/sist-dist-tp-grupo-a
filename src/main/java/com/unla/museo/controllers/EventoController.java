@@ -12,7 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.List;
-
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.springframework.web.bind.annotation.RestController;
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/eventos")
 public class EventoController {
