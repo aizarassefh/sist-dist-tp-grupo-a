@@ -260,7 +260,7 @@ function Eventos({ usuario }) {
               </button>
 
               <button
-                className="boton-volver"
+                className="boton-secundario"
                 type="button"
                 onClick={() => setMostrarGuardarFiltro(false)}
               >
@@ -279,7 +279,7 @@ function Eventos({ usuario }) {
         )}
 
         {cargando && (
-          <p>Cargando eventos...</p>
+          <p className="ficha-mensaje">Cargando eventos...</p>
         )}
 
         {backendNoDisponible && (

@@ -3,8 +3,7 @@ import {
   Link,
   NavLink,
   Route,
-  Routes,
-  useNavigate
+  Routes
 } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Catalogo from './pages/Catalogo'
@@ -88,16 +87,6 @@ function Navegacion({ user, onLogout }) {
   )
 }
 
-function Inicio() {
-  const navigate = useNavigate()
-
-  return (
-    <Home
-      onExplorar={() => navigate('/coleccion')}
-    />
-  )
-}
-
 function Reporte() {
   return <ReporteAsistencia />
 }
@@ -161,7 +150,7 @@ function App() {
 
   if (!token) {
     return (
-      <main className="app">
+      <main className="app-acceso">
         <Routes>
           <Route
             path="/registro"
@@ -194,7 +183,7 @@ function App() {
       <Routes>
         <Route
           path="/"
-          element={<Inicio />}
+          element={<Home usuario={user} />}
         />
 
         <Route

@@ -1,0 +1,112 @@
+/* =========================
+   INICIO
+   Una obra destacada, grande, con un texto corto al lado; abajo, un índice
+   de secciones en filas, como la guía impresa de un museo.
+   ========================= */
+
+.inicio-portada {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--espacio-7);
+  align-items: center;
+  padding: var(--espacio-8) 0 var(--espacio-7);
+}
+
+.inicio-texto h1 {
+  margin: 0;
+  font-size: clamp(40px, 5.2vw, 68px);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+
+.inicio-bajada {
+  max-width: 46ch;
+  margin: var(--espacio-5) 0 var(--espacio-6);
+  color: var(--tinta-suave);
+  font-size: 19px;
+}
+
+.inicio-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-5);
+}
+
+.inicio-obra {
+  margin: 0;
+}
+
+.inicio-imagen.imagen-no-disponible {
+  aspect-ratio: 4 / 5;
+}
+
+.inicio-imagen {
+  display: block;
+  width: 100%;
+  max-height: 72vh;
+  padding: var(--espacio-6);
+  background-color: var(--papel-hundido);
+  object-fit: contain;
+}
+
+.inicio-cartela {
+  margin-top: var(--espacio-3);
+  padding-left: var(--espacio-3);
+  border-left: 1px solid var(--linea-fuerte);
+  color: var(--tinta-suave);
+  font-size: 13px;
+}
+
+.inicio-indice {
+  border-top: 1px solid var(--tinta);
+}
+
+.inicio-indice-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: var(--espacio-6);
+  align-items: baseline;
+  padding: var(--espacio-5) var(--espacio-2);
+  border-bottom: 1px solid var(--linea);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.inicio-indice-fila:hover {
+  background-color: var(--papel-claro);
+}
+
+.inicio-indice-titulo {
+  font-family: var(--serif);
+  font-size: 30px;
+  transition: color 0.15s;
+}
+
+.inicio-indice-fila:hover .inicio-indice-titulo {
+  color: var(--acento);
+}
+
+.inicio-indice-texto {
+  color: var(--tinta-suave);
+}
+
+.inicio-indice-texto::after {
+  content: ' →';
+  color: var(--acento);
+}
+
+@media (max-width: 800px) {
+
+  .inicio-portada {
+    grid-template-columns: 1fr;
+    padding-top: var(--espacio-6);
+  }
+
+  .inicio-indice-fila {
+    grid-template-columns: 1fr;
+    gap: var(--espacio-1);
+  }
+
+}

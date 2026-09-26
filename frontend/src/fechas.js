@@ -30,6 +30,11 @@ export function partesDeFecha(texto) {
   }
 }
 
+// El reporte agrupa por "2026-09"; se muestra como "septiembre de 2026".
+export function formatearMes(anioMes) {
+  return FORMATO_MES_ANIO.format(new Date(`${anioMes}-01T00:00:00`))
+}
+
 export function formatearFechaHora(texto) {
   return FORMATO_FECHA_HORA.format(new Date(texto))
 }

@@ -1,0 +1,148 @@
+/* =========================
+   REPORTE DE ASISTENCIA
+   Los números mandan: cifras grandes por grupo y, debajo, el ranking de
+   eventos. Cada grupo es una fila entre líneas, como una tabla de memoria
+   anual.
+   ========================= */
+
+.encabezado .reporte-aclaracion {
+  margin-top: var(--espacio-3);
+  color: var(--tinta-tenue);
+  font-size: 13px;
+}
+
+.reporte-filtros .campo {
+  flex: 1 1 150px;
+}
+
+.reporte-acciones {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--espacio-3);
+}
+
+.fecha-corte {
+  margin: 0 0 var(--espacio-4);
+  color: var(--tinta-tenue);
+  font-size: 13px;
+}
+
+.grupo-reporte {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  column-gap: var(--espacio-7);
+  row-gap: var(--espacio-5);
+  padding: var(--espacio-6) 0;
+  border-top: 1px solid var(--linea);
+}
+
+.grupo-reporte:first-of-type {
+  border-top-color: var(--tinta);
+}
+
+.grupo-reporte-titulo {
+  grid-row: 1 / span 2;
+}
+
+.grupo-reporte-titulo h3 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.grupo-reporte-titulo h3::first-letter {
+  text-transform: uppercase;
+}
+
+.grupo-reporte-titulo h3 + h3 {
+  margin-top: var(--espacio-1);
+  color: var(--tinta-suave);
+  font-size: 18px;
+}
+
+.estadisticas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-7);
+}
+
+.estadistica span {
+  display: block;
+  margin-bottom: var(--espacio-2);
+  color: var(--tinta-tenue);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.estadistica strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 52px;
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.eventos-populares h4 {
+  margin: 0 0 var(--espacio-2);
+  color: var(--tinta-tenue);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.eventos-populares ol {
+  max-width: 560px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: popular;
+}
+
+.eventos-populares li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: var(--espacio-2);
+  padding: 6px 0;
+  border-bottom: 1px dotted var(--linea-fuerte);
+  counter-increment: popular;
+}
+
+.eventos-populares li::before {
+  content: counter(popular) '.';
+  color: var(--tinta-tenue);
+}
+
+.populares-cantidad {
+  color: var(--tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.eventos-populares p {
+  margin: 0;
+  color: var(--tinta-tenue);
+  font-style: italic;
+}
+
+@media (max-width: 800px) {
+
+  .grupo-reporte {
+    grid-template-columns: 1fr;
+  }
+
+  .grupo-reporte-titulo {
+    grid-row: auto;
+  }
+
+  .estadisticas {
+    gap: var(--espacio-5);
+  }
+
+  .estadistica strong {
+    font-size: 40px;
+  }
+
+}

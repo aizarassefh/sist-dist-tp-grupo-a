@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { guardarToken, mensajeDeError, pedir } from '../api/cliente'
+import PantallaAcceso from './PantallaAcceso'
 
 // Misma regla que valida el backend (ver validación de registro), repetida acá
 // para que el usuario vea el motivo antes de mandar el formulario.
@@ -72,7 +73,7 @@ function Registro({ onLogin }) {
   }
 
   return (
-  <div className="login-container">
+  <PantallaAcceso>
     <form onSubmit={handleSubmit}>
 
       <h2>Creá tu cuenta</h2>
@@ -155,7 +156,7 @@ function Registro({ onLogin }) {
       </p>
 
     </form>
-  </div>
+  </PantallaAcceso>
 )
 }
 

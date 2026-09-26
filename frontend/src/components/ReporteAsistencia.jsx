@@ -3,6 +3,7 @@ import { useQuery } from '@apollo/client/react'
 import { REPORTE_ASISTENCIA_QUERY } from '../graphql/queries'
 import { pedir, mensajeDeError } from '../api/cliente'
 import { TIPOS_EVENTO, etiquetaTipo } from '../tiposEvento'
+import { formatearFechaHora, formatearMes } from '../fechas'
 
 // El contrato (docs/contrato-api-eventos.md) propone mover esta ruta a
 // /api/reportes/asistencia/excel cuando el backend pase la exportación al
@@ -99,12 +100,12 @@ function ReporteAsistencia() {
 
   return (
     <section className="reporte">
-      <div className="reporte-encabezado">
-        <h2>Reporte de asistencia</h2>
+      <header className="encabezado">
+        <h1>Reporte de asistencia</h1>
 
         <p>
-          Consulta la cantidad de eventos e inscripciones
-          registrados.
+          Eventos e inscripciones agrupados por mes o por tipo de
+          evento.
         </p>
 
         <p className="reporte-aclaracion">
@@ -112,10 +113,10 @@ function ReporteAsistencia() {
           registradas: el sistema no registra la presencia
           el día del evento.
         </p>
-      </div>
+      </header>
 
       <form
-        className="reporte-filtros"
+        className="filtros reporte-filtros"
         onSubmit={generarReporte}
       >
         <div className="campo">
@@ -226,7 +227,7 @@ function ReporteAsistencia() {
           </button>
 
           <button
-            className="boton-generar"
+            className="boton-secundario"
             type="button"
             disabled={exportando}
             onClick={exportarExcel}
@@ -237,7 +238,7 @@ function ReporteAsistencia() {
       </form>
 
       {loading && (
-        <p>Cargando reporte...</p>
+        <p className="ficha-mensaje">Cargando reporte...</p>
       )}
 
       {error && (
@@ -255,8 +256,8 @@ function ReporteAsistencia() {
       {data?.reporteAsistencia && (
         <div className="reporte-resultado">
           <p className="fecha-corte">
-            Fecha de corte:{' '}
-            {data.reporteAsistencia.fechaCorte}
+            Datos al{' '}
+            {formatearFechaHora(data.reporteAsistencia.fechaCorte)}
           </p>
 
           {data.reporteAsistencia.grupos.length === 0 ? (
@@ -273,7 +274,7 @@ function ReporteAsistencia() {
                 >
                   <div className="grupo-reporte-titulo">
                     {grupo.mes && (
-                      <h3>{grupo.mes}</h3>
+                      <h3>{formatearMes(grupo.mes)}</h3>
                     )}
 
                     {grupo.tipo && (
@@ -308,7 +309,10 @@ function ReporteAsistencia() {
                       </span>
 
                       <strong>
-                        {grupo.promedioDeAsistencia.toFixed(2)}
+                        {grupo.promedioDeAsistencia.toLocaleString('es-AR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
                       </strong>
                     </div>
                   </div>
@@ -327,14 +331,11 @@ function ReporteAsistencia() {
                         {grupo.eventosMasPopulares.map(
                           (evento) => (
                             <li key={evento.id}>
-                              <strong>
-                                {evento.titulo}
-                              </strong>
+                              <span>{evento.titulo}</span>
 
-                              {' — '}
-
-                              {evento.cantidadInscriptos}{' '}
-                              inscriptos
+                              <span className="populares-cantidad">
+                                {evento.cantidadInscriptos}
+                              </span>
                             </li>
                           )
                         )}

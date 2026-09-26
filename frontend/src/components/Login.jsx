@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { guardarToken, mensajeDeError, pedir } from '../api/cliente'
+import PantallaAcceso from './PantallaAcceso'
 
 function Login({ onLogin }) {
   const [email, setEmail] = useState('')
@@ -35,7 +36,7 @@ function Login({ onLogin }) {
   }
 
   return (
-  <div className="login-container">
+  <PantallaAcceso>
     <form onSubmit={handleSubmit}>
 
       <h2>Iniciar sesión</h2>
@@ -75,7 +76,7 @@ function Login({ onLogin }) {
       </p>
 
     </form>
-  </div>
+  </PantallaAcceso>
 )
 }
 

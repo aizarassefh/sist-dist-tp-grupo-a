@@ -1,0 +1,105 @@
+/* =========================
+   MIS FILTROS
+   Una lista de búsquedas guardadas, en filas: el nombre, qué filtra y las
+   acciones a la derecha. Al editar, la fila se abre en un panel.
+   ========================= */
+
+.favoritos {
+  border-top: 1px solid var(--tinta);
+}
+
+.favorito {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--espacio-6);
+  align-items: center;
+  padding: var(--espacio-5) 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.favorito > * {
+  grid-column: 1;
+}
+
+.favorito > .favorito-acciones {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+}
+
+.favorito h3 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.favorito > p {
+  margin: var(--espacio-1) 0 0;
+  color: var(--tinta-suave);
+}
+
+.resumen-filtros {
+  margin: var(--espacio-2) 0 0;
+  color: var(--tinta-tenue);
+  font-size: 13px;
+}
+
+.favorito-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+
+.favorito.editando {
+  display: block;
+  margin: var(--espacio-4) 0;
+  padding: var(--espacio-5);
+  border-top: 3px solid var(--acento);
+  border-bottom: none;
+  background-color: var(--papel-claro);
+}
+
+.favorito.editando .campo {
+  margin-bottom: var(--espacio-4);
+}
+
+.favorito.editando .filtros {
+  margin-bottom: var(--espacio-4);
+}
+
+.favorito.editando .favorito-acciones {
+  margin-top: var(--espacio-4);
+}
+
+/* Panel para guardar la búsqueda actual, en el listado de eventos. */
+.guardar-filtro {
+  display: grid;
+  gap: var(--espacio-4);
+  max-width: 640px;
+  margin-bottom: var(--espacio-6);
+  padding: var(--espacio-5);
+  border-top: 3px solid var(--acento);
+  background-color: var(--papel-claro);
+}
+
+.guardar-filtro .resumen-filtros {
+  margin: 0;
+}
+
+.guardar-filtro-acciones {
+  display: flex;
+  gap: var(--espacio-3);
+}
+
+@media (max-width: 700px) {
+
+  .favorito {
+    grid-template-columns: 1fr;
+  }
+
+  .favorito > .favorito-acciones {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: var(--espacio-3);
+  }
+
+}

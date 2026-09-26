@@ -1,0 +1,156 @@
+/* =========================
+   ACCESO: LOGIN Y REGISTRO
+   Pantalla partida: una obra sobre fondo oscuro, como en una sala con la
+   luz sobre el cuadro, y el formulario del otro lado.
+   ========================= */
+
+.app-acceso {
+  min-height: 100vh;
+}
+
+.acceso {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.acceso-obra {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--espacio-5);
+  margin: 0;
+  padding: var(--espacio-7);
+  background-color: var(--tinta);
+}
+
+.acceso-imagen {
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 180px);
+  object-fit: contain;
+}
+
+.acceso-imagen.imagen-no-disponible {
+  color: var(--tinta-tenue);
+}
+
+.acceso-cartela {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--espacio-3);
+  padding-top: var(--espacio-3);
+  border-top: 1px solid #4a443c;
+  color: #cfc6b6;
+  font-size: 13px;
+}
+
+.acceso-marca {
+  color: var(--papel);
+  font-family: var(--serif);
+  font-size: 20px;
+}
+
+.acceso-formulario {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espacio-7) var(--espacio-6);
+}
+
+.acceso-formulario form {
+  width: 100%;
+  max-width: 380px;
+}
+
+.acceso-formulario h2 {
+  margin: 0 0 var(--espacio-6);
+  font-size: 40px;
+}
+
+.acceso-formulario form > div {
+  margin-bottom: var(--espacio-4);
+}
+
+.acceso-formulario label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--tinta-suave);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.acceso-formulario input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio);
+  background-color: var(--papel-claro);
+}
+
+.acceso-formulario input:focus {
+  border-color: var(--acento);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--acento-tenue);
+}
+
+.acceso-formulario button[type='submit'] {
+  width: 100%;
+  margin-top: var(--espacio-2);
+  padding: 14px 18px;
+  font-size: 15px;
+}
+
+.login-error {
+  margin: 0 0 var(--espacio-4);
+  padding: var(--espacio-3) var(--espacio-4);
+  border-left: 3px solid var(--error);
+  background-color: #f7e6e3;
+  color: var(--error);
+  font-size: 14px;
+}
+
+.login-ayuda {
+  margin: 6px 0 0;
+  color: var(--tinta-tenue);
+  font-size: 12px;
+}
+
+.login-enlace {
+  margin: var(--espacio-5) 0 0;
+  font-size: 14px;
+}
+
+.login-enlace a {
+  color: var(--acento);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-enlace a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+
+  .acceso {
+    grid-template-columns: 1fr;
+  }
+
+  .acceso-obra {
+    padding: var(--espacio-5);
+  }
+
+  .acceso-imagen {
+    max-height: 32vh;
+  }
+
+  .acceso-formulario {
+    padding: var(--espacio-6) var(--espacio-5);
+  }
+
+}

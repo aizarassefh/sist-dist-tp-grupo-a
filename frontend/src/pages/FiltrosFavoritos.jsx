@@ -98,7 +98,7 @@ function Favorito({ favorito, curadores, onEliminado, onNoExiste, onActualizado 
 
   if (editando) {
     return (
-      <article className="favorito">
+      <article className="favorito editando">
         <form onSubmit={guardar}>
 
           <div className="campo">
@@ -147,7 +147,7 @@ function Favorito({ favorito, curadores, onEliminado, onNoExiste, onActualizado 
             </button>
 
             <button
-              className="boton-volver"
+              className="boton-secundario"
               type="button"
               onClick={() => setEditando(false)}
             >
@@ -179,11 +179,11 @@ function Favorito({ favorito, curadores, onEliminado, onNoExiste, onActualizado 
           Aplicar
         </button>
 
-        <button className="boton-volver" type="button" onClick={empezarEdicion}>
+        <button className="boton-secundario" type="button" onClick={empezarEdicion}>
           Editar
         </button>
 
-        <button className="boton-volver" type="button" onClick={eliminar}>
+        <button className="boton-peligro" type="button" onClick={eliminar}>
           Eliminar
         </button>
       </div>
@@ -278,15 +278,15 @@ function FiltrosFavoritos() {
     <>
 
       <header className="encabezado">
-        <h1>Mis filtros favoritos</h1>
+        <h1>Mis filtros</h1>
 
         <p>
-          Búsquedas de eventos que guardaste para aplicar de nuevo
+          Búsquedas de eventos que guardaste para volver a aplicarlas con un clic.
         </p>
       </header>
 
       {cargando && (
-        <p>Cargando filtros favoritos...</p>
+        <p className="ficha-mensaje">Cargando filtros favoritos...</p>
       )}
 
       {backendNoDisponible && (

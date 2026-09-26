@@ -309,16 +309,8 @@ textarea:focus-visible {
   background-color: var(--ok);
 }
 
-.estado.completo::before {
-  background-color: var(--acento);
-}
-
 .estado.inscripto {
   color: var(--ok);
-}
-
-.estado.completo {
-  color: var(--acento);
 }
 
 /* =========================

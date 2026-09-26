@@ -1,70 +1,94 @@
-function Home({ onExplorar }) {
+import { Link } from 'react-router-dom'
+import ImagenObra from './ImagenObra'
+import { esGestor } from '../roles'
+
+// Un índice en filas y no tres tarjetas iguales: cada sección se nombra con
+// lo que se hace ahí.
+const SECCIONES = [
+  {
+    ruta: '/coleccion',
+    titulo: 'La colección',
+    texto: 'Obras del Renacimiento al siglo XX. Buscá por artista, época, técnica o sala.'
+  },
+  {
+    ruta: '/eventos',
+    titulo: 'Agenda',
+    texto: 'Visitas guiadas, talleres y charlas. Anotate y cancelá cuando quieras.'
+  },
+  {
+    ruta: '/favoritos',
+    titulo: 'Mis filtros',
+    texto: 'Las búsquedas de eventos que guardaste, para aplicarlas de nuevo.'
+  }
+]
+
+const SECCION_REPORTE = {
+  ruta: '/reporte',
+  titulo: 'Reporte de asistencia',
+  texto: 'Inscripciones por mes y por tipo de evento, y exportación a Excel.'
+}
+
+function Home({ usuario }) {
+  const secciones = esGestor(usuario)
+    ? [...SECCIONES, SECCION_REPORTE]
+    : SECCIONES
+
   return (
-    <section className="inicio">
+    <div className="inicio">
 
-      <div className="inicio-contenido">
+      <section className="inicio-portada">
 
-        <p className="inicio-etiqueta">
-          MUSEO VIRTUAL
-        </p>
+        <div className="inicio-texto">
+          <p className="rotulo">Museo Virtual</p>
 
-        <h2>
-          Explorá nuestra colección
-        </h2>
+          <h1>
+            Más de cuatro siglos de pintura, a una búsqueda de distancia.
+          </h1>
 
-        <p className="inicio-descripcion">
-          Descubrí obras de distintos períodos,
-          artistas y movimientos de la historia del arte.
-        </p>
-
-        <button
-          className="boton-explorar"
-          type="button"
-          onClick={onExplorar}
-        >
-          Explorar colección
-        </button>
-
-      </div>
-
-      <div className="inicio-informacion">
-
-        <div className="inicio-tarjeta">
-
-          <h3>Obras de arte</h3>
-
-          <p>
-            Consultá nuestra colección y conocé
-            información sobre cada obra.
+          <p className="inicio-bajada">
+            Recorré la colección, conocé a sus artistas y sumate a las
+            visitas guiadas, talleres y charlas del museo.
           </p>
 
+          <div className="inicio-acciones">
+            <Link className="boton-generar" to="/coleccion">
+              Recorrer la colección
+            </Link>
+
+            <Link className="boton-detalle" to="/eventos">
+              Ver la agenda
+            </Link>
+          </div>
         </div>
 
-        <div className="inicio-tarjeta">
+        <figure className="inicio-obra">
+          <ImagenObra
+            className="inicio-imagen"
+            src="/obras/el-grito.jpg"
+            alt="El grito, de Edvard Munch"
+          />
 
-          <h3>Artistas</h3>
+          <figcaption className="inicio-cartela">
+            <em>El grito</em>, Edvard Munch, 1893
+          </figcaption>
+        </figure>
 
-          <p>
-            Conocé a los artistas y sus principales
-            obras.
-          </p>
+      </section>
 
-        </div>
+      <nav className="inicio-indice" aria-label="Secciones del museo">
+        {secciones.map((seccion) => (
+          <Link
+            key={seccion.ruta}
+            className="inicio-indice-fila"
+            to={seccion.ruta}
+          >
+            <span className="inicio-indice-titulo">{seccion.titulo}</span>
+            <span className="inicio-indice-texto">{seccion.texto}</span>
+          </Link>
+        ))}
+      </nav>
 
-        <div className="inicio-tarjeta">
-
-          <h3>Exploración</h3>
-
-          <p>
-            Utilizá filtros para encontrar obras
-            según tus intereses.
-          </p>
-
-        </div>
-
-      </div>
-
-    </section>
+    </div>
   )
 }
 
