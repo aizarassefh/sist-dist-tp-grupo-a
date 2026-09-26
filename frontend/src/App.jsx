@@ -1,6 +1,7 @@
 import { useApolloClient } from '@apollo/client/react'
 import {
   Link,
+  NavLink,
   Route,
   Routes,
   useNavigate
@@ -31,41 +32,42 @@ function Navegacion({ user, onLogout }) {
       </Link>
 
       <div className="navegacion-links">
-        <Link
+        <NavLink
           to="/"
+          end
           className="navegacion-link"
         >
           Inicio
-        </Link>
+        </NavLink>
 
-        <Link
+        <NavLink
           to="/coleccion"
           className="navegacion-link"
         >
           Colección
-        </Link>
+        </NavLink>
 
-        <Link
+        <NavLink
           to="/eventos"
           className="navegacion-link"
         >
           Eventos
-        </Link>
+        </NavLink>
 
-        <Link
+        <NavLink
           to="/favoritos"
           className="navegacion-link"
         >
           Mis filtros
-        </Link>
+        </NavLink>
 
         {esGestor(user) && (
-          <Link
+          <NavLink
             to="/reporte"
             className="navegacion-link"
           >
             Reporte
-          </Link>
+          </NavLink>
         )}
 
         <span className="usuario-info">
@@ -77,7 +79,7 @@ function Navegacion({ user, onLogout }) {
         <button
           type="button"
           onClick={onLogout}
-          className="navegacion-link"
+          className="navegacion-salir"
         >
           Cerrar sesión
         </button>

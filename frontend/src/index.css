@@ -1,95 +1,6 @@
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f4f1eb;
-  color: #2b2926;
-}
-
-button,
-input,
-select {
-  font: inherit;
-}
-
-.app {
-  width: min(1200px, 92%);
-  margin: 0 auto;
-  padding: 40px 0;
-}
-
-/* =========================
-   ENCABEZADO
-   ========================= */
-
-.encabezado {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.encabezado h1 {
-  margin-bottom: 10px;
-  font-size: 42px;
-}
-
-.encabezado p {
-  margin: 0;
-  color: #666;
-  font-size: 18px;
-}
-
-/* =========================
-   FILTROS
-   ========================= */
-
-.filtros {
-  background-color: white;
-  padding: 25px;
-  border-radius: 12px;
-  margin-bottom: 35px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.filtros h2 {
-  margin-top: 0;
-}
-
-.filtros-grupo {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.campo {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.campo label {
-  font-weight: bold;
-}
-
-.campo input,
-.campo select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: white;
-}
-
-.boton-limpiar {
-  margin-top: 20px;
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: #333;
-  color: white;
-}
+/* Sistema y piezas comunes; cada pantalla tiene su sección más abajo. */
+@import './estilos/base.css';
+@import './estilos/navegacion.css';
 
 /* =========================
    CATÁLOGO
@@ -125,38 +36,6 @@ select {
 
 .obra-descripcion {
   line-height: 1.5;
-}
-
-.estado {
-  display: inline-block;
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 13px;
-  margin: 8px 0;
-}
-
-.exhibicion {
-  background-color: #dff2df;
-  color: #276327;
-}
-
-.deposito {
-  background-color: #eee;
-  color: #555;
-}
-
-.obra button {
-  margin-top: 10px;
-  padding: 9px 15px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: #333;
-  color: white;
-}
-
-.error {
-  color: #a00000;
 }
 
 /* =========================
@@ -229,16 +108,6 @@ select {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.boton-volver {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: #333;
-  color: white;
-  margin-bottom: 30px;
-}
-
 .detalle-contenido {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -272,36 +141,6 @@ select {
 }
 
 /* =========================
-   PAGINACIÓN
-   ========================= */
-
-.paginacion {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  margin-top: 35px;
-}
-
-.paginacion button {
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: #333;
-  color: white;
-}
-
-.paginacion button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.paginacion span {
-  font-weight: bold;
-}
-
-/* =========================
    REPORTE
    ========================= */
 
@@ -326,16 +165,6 @@ select {
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   margin-top: 25px;
-}
-
-.boton-generar {
-  align-self: end;
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: #333;
-  color: white;
 }
 
 .reporte-resultado {
@@ -476,173 +305,6 @@ select {
   line-height: 1.5;
 }
 
-.boton-inicio {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: #333;
-  color: white;
-  margin-bottom: 15px;
-}
-
-/* =========================
-   NAVEGACIÓN
-   ========================= */
-
-.navegacion {
-  display: flex;
-  align-items: center;
-  min-height: 70px;
-
-  padding: 0 22px;
-  margin-bottom: 35px;
-
-  background-color: #292621;
-
-  border-radius: 12px;
-
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-.navegacion-logo {
-  font-size: 22px;
-  font-weight: bold;
-  color: #f4eee5;
-  white-space: nowrap;
-}
-
-.navegacion-links {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 30px;
-}
-
-.navegacion-link {
-  display: inline-flex;
-  align-items: center;
-
-  padding: 9px 15px;
-
-  border: none;
-  border-radius: 7px;
-
-  background-color: transparent;
-  color: #d8d1c7;
-
-  cursor: pointer;
-  text-decoration: none;
-
-  font-size: 14px;
-  font-weight: 500;
-
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.navegacion-link:hover {
-  background-color: #403b34;
-  color: white;
-}
-
-.navegacion-link.activo {
-  background-color: #80613b;
-  color: white;
-}
-
-/* =========================
-   INFORMACIÓN DEL USUARIO
-   ========================= */
-
-.navegacion-usuario {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-left: auto;
-}
-
-.navegacion-usuario-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.2;
-}
-
-.navegacion-usuario-nombre {
-  color: #f4eee5;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.navegacion-usuario-rol {
-  margin-top: 4px;
-
-  color: #bdb3a5;
-
-  font-size: 11px;
-  font-weight: 600;
-
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-/* =========================
-   CERRAR SESIÓN
-   ========================= */
-
-.navegacion-logout {
-  padding: 9px 14px;
-
-  border: 1px solid #6e675d;
-  border-radius: 7px;
-
-  background-color: transparent;
-  color: #ddd5ca;
-
-  cursor: pointer;
-
-  font-size: 13px;
-
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.navegacion-logout:hover {
-  background-color: #403b34;
-  border-color: #958a7c;
-  color: white;
-}
-
-/* =========================
-   BOTÓN DETALLE
-   ========================= */
-
-.boton-detalle {
-  display: inline-block;
-
-  margin-top: 10px;
-  padding: 9px 15px;
-
-  border: none;
-  border-radius: 6px;
-
-  cursor: pointer;
-
-  background-color: #333;
-  color: white;
-
-  text-decoration: none;
-
-  font-size: 16px;
-}
-
-.boton-detalle:hover {
-  background-color: #222;
-}
-
 /* =========================
    LOGIN
    ========================= */
@@ -754,16 +416,8 @@ select {
 
 @media (max-width: 700px) {
 
-  .filtros-grupo {
-    grid-template-columns: 1fr;
-  }
-
   .obras {
     grid-template-columns: 1fr;
-  }
-
-  .encabezado h1 {
-    font-size: 32px;
   }
 
   .detalle-contenido {
@@ -795,34 +449,6 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .navegacion {
-    flex-direction: column;
-    gap: 12px;
-    padding: 18px;
-  }
-
-  .navegacion-logo {
-    width: 100%;
-    text-align: center;
-  }
-
-  .navegacion-links {
-    width: 100%;
-    justify-content: center;
-    margin-left: 0;
-    flex-wrap: wrap;
-  }
-
-  .navegacion-usuario {
-    width: 100%;
-    justify-content: center;
-    margin-left: 0;
-  }
-
-  .navegacion-usuario-info {
-    align-items: center;
-  }
-
   .login-container {
     padding: 20px;
   }
@@ -830,21 +456,6 @@ select {
   .login-container form {
     padding: 30px 25px;
   }
-}
-/* =========================
-   SIN PERMISO
-   ========================= */
-
-.sin-permiso {
-  background-color: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  text-align: center;
-}
-
-.sin-permiso h2 {
-  margin-top: 0;
 }
 /* =========================
    REGISTRO
@@ -887,11 +498,6 @@ select {
   gap: 12px;
 }
 
-.reporte-acciones .boton-generar:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
 /* =========================
    EVENTOS
    ========================= */
@@ -903,50 +509,12 @@ select {
   margin-bottom: 20px;
 }
 
-.estado.inscripto {
-  background-color: #dff2df;
-  color: #276327;
-  margin-right: 8px;
-}
-
-.estado.finalizado {
-  background-color: #eee;
-  color: #555;
-  margin-right: 8px;
-}
-
-.estado.completo {
-  background-color: #f9e5e3;
-  color: #a33a32;
-}
-
-.motivo-deshabilitado {
-  margin-top: 8px;
-  color: #77706a;
-  font-size: 13px;
-}
-
 .detalle-evento-acciones {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
   margin-top: 25px;
-}
-
-.detalle-evento-acciones button {
-  padding: 9px 15px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: #333;
-  color: white;
-  font-size: 16px;
-}
-
-.detalle-evento-acciones button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
 }
 
 /* =========================
@@ -957,15 +525,6 @@ select {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
-}
-
-.formulario-evento .campo textarea {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: white;
-  font-family: inherit;
-  resize: vertical;
 }
 
 .formulario-evento-acciones {
@@ -1001,15 +560,6 @@ select {
 .eventos-encabezado-acciones {
   display: flex;
   gap: 12px;
-}
-
-.campo textarea {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: white;
-  font-family: inherit;
-  resize: vertical;
 }
 
 .guardar-filtro {

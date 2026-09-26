@@ -1,0 +1,95 @@
+/* =========================
+   NAVEGACIÓN
+   Una barra plana con el nombre del museo en serif: se lee como el
+   membrete de una institución y no como el menú de una app.
+   ========================= */
+
+.navegacion {
+  display: flex;
+  align-items: baseline;
+  gap: var(--espacio-6);
+  padding: var(--espacio-5) 0 var(--espacio-4);
+  border-bottom: 1px solid var(--tinta);
+}
+
+.navegacion-logo {
+  font-family: var(--serif);
+  font-size: 26px;
+  color: var(--tinta);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.navegacion-links {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--espacio-5);
+}
+
+.navegacion-link {
+  padding: var(--espacio-1) 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--tinta-suave);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.navegacion-link:hover {
+  background: none;
+  color: var(--tinta);
+}
+
+/* NavLink agrega "active" solo a la sección en la que está el usuario. */
+.navegacion-link.active {
+  border-bottom-color: var(--acento);
+  color: var(--tinta);
+}
+
+.usuario-info {
+  margin-left: auto;
+  color: var(--tinta-tenue);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.navegacion-salir {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--tinta-suave);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.navegacion-salir:hover {
+  background: none;
+  color: var(--acento);
+}
+
+@media (max-width: 800px) {
+
+  .navegacion {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--espacio-3);
+  }
+
+  .navegacion-links {
+    flex-wrap: wrap;
+    gap: var(--espacio-3) var(--espacio-5);
+    width: 100%;
+  }
+
+  .usuario-info {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+
+}
