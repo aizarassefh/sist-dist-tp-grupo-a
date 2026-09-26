@@ -1,4 +1,4 @@
-import { useQuery } from '@apollo/client/react'
+import { useApolloClient, useQuery } from '@apollo/client/react'
 import {
   Link,
   Route,
@@ -13,6 +13,9 @@ import FiltrosObras from './components/FiltrosObras'
 import ReporteAsistencia from './components/ReporteAsistencia'
 import Home from './components/Home'
 import Login from './components/Login'
+import RequiereRol from './components/RequiereRol'
+import { borrarToken, EVENTO_SESION_VENCIDA, obtenerToken, pedir } from './api/cliente'
+import { ROLES, esGestor } from './roles'
 
 const TAMANIO_PAGINA = 2
 
@@ -41,8 +44,7 @@ function Navegacion({ user, onLogout }) {
           Colección
         </Link>
 
-        {(user?.role?.toUpperCase() === 'CURADOR' ||
-          user?.role?.toUpperCase() === 'ADMINISTRADOR') && (
+        {esGestor(user) && (
           <Link
             to="/reporte"
             className="navegacion-link"
@@ -420,61 +422,60 @@ function Reporte() {
 }
 
 function App() {
-  const [token, setToken] = useState(
-    localStorage.getItem('token')
-  )
+  const client = useApolloClient()
 
+  const [token, setToken] = useState(obtenerToken)
   const [user, setUser] = useState(null)
-  const [loadingUser, setLoadingUser] = useState(true)
 
   const handleLogin = (accessToken) => {
     setToken(accessToken)
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
+    borrarToken()
     setToken(null)
     setUser(null)
+    // Sin esto, al entrar con otro usuario Apollo seguiría mostrando
+    // resultados cacheados de la sesión anterior.
+    client.clearStore()
   }
 
   useEffect(() => {
-    if (!token) {
+    function alVencerSesion() {
+      setToken(null)
       setUser(null)
-      setLoadingUser(false)
+      client.clearStore()
+    }
+
+    window.addEventListener(EVENTO_SESION_VENCIDA, alVencerSesion)
+    return () => window.removeEventListener(EVENTO_SESION_VENCIDA, alVencerSesion)
+  }, [client])
+
+  useEffect(() => {
+    if (!token) {
       return
     }
 
-    const getAuthenticatedUser = async () => {
-      try {
-        const response = await fetch(
-          'http://localhost:8000/api/auth/me',
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
+    let cancelado = false
 
-        if (!response.ok) {
-          throw new Error('Token inválido o expirado')
+    pedir('/api/auth/me')
+      .then((userData) => {
+        if (!cancelado) {
+          setUser(userData)
         }
-
-        const userData = await response.json()
-
-        setUser(userData)
-      } catch (error) {
+      })
+      .catch((error) => {
         console.error(error)
+        if (!cancelado) {
+          borrarToken()
+          setToken(null)
+          setUser(null)
+        }
+      })
 
-        localStorage.removeItem('token')
-        setToken(null)
-        setUser(null)
-      } finally {
-        setLoadingUser(false)
-      }
+    return () => {
+      cancelado = true
     }
-
-    getAuthenticatedUser()
   }, [token])
 
   if (!token) {
@@ -485,7 +486,7 @@ function App() {
     )
   }
 
-  if (loadingUser) {
+  if (!user) {
     return (
       <main className="app">
         <p>Cargando usuario...</p>
@@ -517,7 +518,14 @@ function App() {
 
         <Route
           path="/reporte"
-          element={<Reporte />}
+          element={
+            <RequiereRol
+              usuario={user}
+              roles={[ROLES.CURADOR, ROLES.ADMINISTRADOR]}
+            >
+              <Reporte />
+            </RequiereRol>
+          }
         />
       </Routes>
     </main>

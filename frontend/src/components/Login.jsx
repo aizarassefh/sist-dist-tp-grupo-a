@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { guardarToken, mensajeDeError, pedir } from '../api/cliente'
 
 function Login({ onLogin }) {
   const [email, setEmail] = useState('')
@@ -13,28 +14,20 @@ function Login({ onLogin }) {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:8000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      const data = await pedir('/api/auth/login', {
+        metodo: 'POST',
+        cuerpo: { email, password },
       })
 
-      if (!response.ok) {
-        throw new Error('Email o contraseña incorrectos')
-      }
-
-      const data = await response.json()
-
-      localStorage.setItem('token', data.accessToken)
+      guardarToken(data.accessToken)
 
       onLogin(data.accessToken)
     } catch (error) {
-      setError(error.message)
+      setError(
+        mensajeDeError(error, {
+          401: 'Email o contraseña incorrectos',
+        })
+      )
     } finally {
       setLoading(false)
     }

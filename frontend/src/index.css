@@ -831,3 +831,18 @@ select {
     padding: 30px 25px;
   }
 }
+/* =========================
+   SIN PERMISO
+   ========================= */
+
+.sin-permiso {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.sin-permiso h2 {
+  margin-top: 0;
+}
