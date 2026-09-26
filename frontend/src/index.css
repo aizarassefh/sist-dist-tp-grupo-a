@@ -993,3 +993,80 @@ select {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* =========================
+   FILTROS FAVORITOS
+   ========================= */
+
+.eventos-encabezado-acciones {
+  display: flex;
+  gap: 12px;
+}
+
+.campo textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.guardar-filtro {
+  background-color: white;
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.guardar-filtro .campo {
+  margin-bottom: 15px;
+}
+
+.resumen-filtros {
+  color: #666;
+  font-size: 14px;
+}
+
+.guardar-filtro-acciones {
+  display: flex;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.favoritos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.favorito {
+  background-color: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.favorito h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.favorito .campo {
+  margin-bottom: 15px;
+}
+
+.favorito-acciones {
+  display: flex;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+@media (max-width: 700px) {
+
+  .eventos-encabezado-acciones {
+    flex-wrap: wrap;
+  }
+
+}

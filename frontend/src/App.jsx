@@ -11,6 +11,7 @@ import DetalleObra from './pages/DetalleObra'
 import Eventos from './pages/Eventos'
 import DetalleEvento from './pages/DetalleEvento'
 import EditarEvento from './pages/EditarEvento'
+import FiltrosFavoritos from './pages/FiltrosFavoritos'
 import ReporteAsistencia from './components/ReporteAsistencia'
 import Home from './components/Home'
 import Login from './components/Login'
@@ -49,6 +50,13 @@ function Navegacion({ user, onLogout }) {
           className="navegacion-link"
         >
           Eventos
+        </Link>
+
+        <Link
+          to="/favoritos"
+          className="navegacion-link"
+        >
+          Mis filtros
         </Link>
 
         {esGestor(user) && (
@@ -229,6 +237,11 @@ function App() {
         <Route
           path="/eventos/:id"
           element={<DetalleEvento usuario={user} />}
+        />
+
+        <Route
+          path="/favoritos"
+          element={<FiltrosFavoritos />}
         />
 
         <Route

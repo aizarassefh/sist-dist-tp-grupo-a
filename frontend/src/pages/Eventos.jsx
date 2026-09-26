@@ -4,7 +4,9 @@ import { ErrorApi, mensajeDeError, pedir } from '../api/cliente'
 import { esGestor } from '../roles'
 import { etiquetaTipo } from '../tiposEvento'
 import { formatearFechaHora, yaComenzo } from '../fechas'
+import { CAMPOS_FILTRO_EVENTOS, filtrosDesdeBusqueda, filtrosParaGuardar } from '../filtrosEventos'
 import FiltrosEventos from '../components/FiltrosEventos'
+import ResumenFiltros from '../components/ResumenFiltros'
 
 const TAMANIO_PAGINA = 10
 
@@ -62,11 +64,8 @@ function TarjetaEvento({ evento, busqueda }) {
 function Eventos({ usuario }) {
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const desde = searchParams.get('desde') ?? ''
-  const hasta = searchParams.get('hasta') ?? ''
-  const tipo = searchParams.get('tipo') ?? ''
-  const curadorId = searchParams.get('curadorId') ?? ''
-  const estado = searchParams.get('estado') ?? ''
+  const filtrosActuales = filtrosDesdeBusqueda(searchParams)
+  const { desde, hasta, tipo, curadorId, estado } = filtrosActuales
   const paginaActual = Number(searchParams.get('pagina')) || 1
 
   const [curadores, setCuradores] = useState([])
@@ -75,6 +74,13 @@ function Eventos({ usuario }) {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [backendNoDisponible, setBackendNoDisponible] = useState(false)
+
+  const [mostrarGuardarFiltro, setMostrarGuardarFiltro] = useState(false)
+  const [nombreFavorito, setNombreFavorito] = useState('')
+  const [descripcionFavorito, setDescripcionFavorito] = useState('')
+  const [guardandoFavorito, setGuardandoFavorito] = useState(false)
+  const [errorGuardarFavorito, setErrorGuardarFavorito] = useState(null)
+  const [favoritoGuardado, setFavoritoGuardado] = useState(false)
 
   useEffect(() => {
     let cancelado = false
@@ -170,6 +176,44 @@ function Eventos({ usuario }) {
     setSearchParams(params)
   }
 
+  function alternarFormularioGuardar() {
+    setFavoritoGuardado(false)
+    setErrorGuardarFavorito(null)
+    setMostrarGuardarFiltro((valor) => !valor)
+  }
+
+  async function guardarFiltro(e) {
+    e.preventDefault()
+    setGuardandoFavorito(true)
+    setErrorGuardarFavorito(null)
+
+    try {
+      await pedir('/api/filtros-favoritos', {
+        metodo: 'POST',
+        cuerpo: {
+          nombre: nombreFavorito.trim(),
+          descripcion: descripcionFavorito.trim() || null,
+          filtros: filtrosParaGuardar(filtrosActuales)
+        }
+      })
+      setMostrarGuardarFiltro(false)
+      setFavoritoGuardado(true)
+      setNombreFavorito('')
+      setDescripcionFavorito('')
+    } catch (error) {
+      // Mismo criterio que el resto de la pantalla: un 500 acá significa que
+      // el backend todavía no tiene filtros favoritos, no un error real.
+      if (error instanceof ErrorApi && error.estado >= 500) {
+        setErrorGuardarFavorito('El servidor todavía no implementa los filtros favoritos.')
+      } else {
+        setErrorGuardarFavorito(mensajeDeError(error))
+      }
+    } finally {
+      setGuardandoFavorito(false)
+    }
+  }
+
+  const hayFiltroAplicado = CAMPOS_FILTRO_EVENTOS.some((campo) => filtrosActuales[campo])
   const totalPaginas = Math.max(1, Math.ceil(total / TAMANIO_PAGINA))
 
   return (
@@ -194,12 +238,92 @@ function Eventos({ usuario }) {
         <div className="eventos-encabezado">
           <h2>Eventos</h2>
 
-          {esGestor(usuario) && (
-            <Link className="boton-generar" to="/eventos/nuevo">
-              Nuevo evento
-            </Link>
-          )}
+          <div className="eventos-encabezado-acciones">
+            <button
+              className="boton-generar"
+              type="button"
+              disabled={!hayFiltroAplicado}
+              // Como tooltip y no como texto fijo: sin filtros es el estado
+              // normal del listado y el aviso quedaría siempre a la vista.
+              title={hayFiltroAplicado ? undefined : 'Aplicá al menos un filtro para guardarlo.'}
+              onClick={alternarFormularioGuardar}
+            >
+              Guardar estos filtros
+            </button>
+
+            {esGestor(usuario) && (
+              <Link className="boton-generar" to="/eventos/nuevo">
+                Nuevo evento
+              </Link>
+            )}
+          </div>
         </div>
+
+        {mostrarGuardarFiltro && (
+          <form className="guardar-filtro" onSubmit={guardarFiltro}>
+
+            <div className="campo">
+              <label htmlFor="nombreFavorito">
+                Nombre
+              </label>
+
+              <input
+                id="nombreFavorito"
+                type="text"
+                required
+                value={nombreFavorito}
+                onChange={(e) => setNombreFavorito(e.target.value)}
+              />
+            </div>
+
+            <div className="campo">
+              <label htmlFor="descripcionFavorito">
+                Descripción
+              </label>
+
+              <textarea
+                id="descripcionFavorito"
+                value={descripcionFavorito}
+                onChange={(e) => setDescripcionFavorito(e.target.value)}
+              />
+            </div>
+
+            <ResumenFiltros
+              filtros={filtrosParaGuardar(filtrosActuales)}
+              curadores={curadores}
+            />
+
+            {errorGuardarFavorito && (
+              <p className="error">{errorGuardarFavorito}</p>
+            )}
+
+            <div className="guardar-filtro-acciones">
+              <button
+                className="boton-generar"
+                type="submit"
+                disabled={guardandoFavorito || !nombreFavorito.trim()}
+              >
+                {guardandoFavorito ? 'Guardando...' : 'Guardar'}
+              </button>
+
+              <button
+                className="boton-volver"
+                type="button"
+                onClick={() => setMostrarGuardarFiltro(false)}
+              >
+                Cancelar
+              </button>
+            </div>
+
+          </form>
+        )}
+
+        {favoritoGuardado && (
+          <p>
+            Filtro guardado.{' '}
+            <Link to="/favoritos">Ver mis filtros favoritos</Link>
+          </p>
+        )}
 
         {cargando && (
           <p>Cargando eventos...</p>
