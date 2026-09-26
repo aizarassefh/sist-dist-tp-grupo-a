@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from '@apollo/client/react'
 import { REPORTE_ASISTENCIA_QUERY } from '../graphql/queries'
+import { pedir, mensajeDeError } from '../api/cliente'
+import { TIPOS_EVENTO, etiquetaTipo } from '../tiposEvento'
+
+// El contrato (docs/contrato-api-eventos.md) propone mover esta ruta a
+// /api/reportes/asistencia/excel cuando el backend pase la exportación al
+// módulo de reportes en vez del módulo de eventos.
+const RUTA_EXPORTAR_EXCEL = '/api/eventos/exportar'
 
 function ReporteAsistencia() {
   const [filtros, setFiltros] = useState({
@@ -28,6 +35,9 @@ function ReporteAsistencia() {
     }
   )
 
+  const [exportando, setExportando] = useState(false)
+  const [errorExportacion, setErrorExportacion] = useState(null)
+
   function cambiarFiltro(nombre, valor) {
     setFiltros((filtrosActuales) => ({
       ...filtrosActuales,
@@ -47,6 +57,46 @@ function ReporteAsistencia() {
     })
   }
 
+  async function exportarExcel() {
+    setExportando(true)
+    setErrorExportacion(null)
+
+    try {
+      // Se exporta con los filtros ya aplicados al reporte, no con lo que
+      // el usuario esté editando sin confirmar todavía.
+      const archivo = await pedir(RUTA_EXPORTAR_EXCEL, {
+        parametros: {
+          desde: filtrosAplicados.desde,
+          hasta: filtrosAplicados.hasta,
+          tipo: filtrosAplicados.tipo,
+          estado: filtrosAplicados.estado
+        },
+        comoArchivo: true
+      })
+
+      const url = URL.createObjectURL(archivo)
+      const enlace = document.createElement('a')
+      // toISOString daría la fecha en UTC: después de las 21 en Argentina
+      // el archivo saldría con la fecha de mañana. sv-SE formatea AAAA-MM-DD.
+      const fecha = new Date().toLocaleDateString('sv-SE')
+
+      enlace.href = url
+      enlace.download = `reporte-asistencia-${fecha}.xlsx`
+      document.body.appendChild(enlace)
+      enlace.click()
+      enlace.remove()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      setErrorExportacion(
+        mensajeDeError(error, {
+          403: 'Solo curadores y administradores pueden exportar.'
+        })
+      )
+    } finally {
+      setExportando(false)
+    }
+  }
+
   return (
     <section className="reporte">
       <div className="reporte-encabezado">
@@ -55,6 +105,12 @@ function ReporteAsistencia() {
         <p>
           Consulta la cantidad de eventos e inscripciones
           registrados.
+        </p>
+
+        <p className="reporte-aclaracion">
+          La asistencia se calcula con las inscripciones
+          registradas: el sistema no registra la presencia
+          el día del evento.
         </p>
       </div>
 
@@ -97,15 +153,21 @@ function ReporteAsistencia() {
             Tipo de evento
           </label>
 
-          <input
+          <select
             id="tipo"
-            type="text"
             value={filtros.tipo}
             onChange={(e) =>
               cambiarFiltro('tipo', e.target.value)
             }
-            placeholder="Ej. Taller"
-          />
+          >
+            <option value="">Todos</option>
+
+            {TIPOS_EVENTO.map((tipo) => (
+              <option key={tipo.valor} value={tipo.valor}>
+                {tipo.etiqueta}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="campo">
@@ -155,12 +217,23 @@ function ReporteAsistencia() {
           </select>
         </div>
 
-        <button
-          className="boton-generar"
-          type="submit"
-        >
-          Generar reporte
-        </button>
+        <div className="reporte-acciones">
+          <button
+            className="boton-generar"
+            type="submit"
+          >
+            Generar reporte
+          </button>
+
+          <button
+            className="boton-generar"
+            type="button"
+            disabled={exportando}
+            onClick={exportarExcel}
+          >
+            {exportando ? 'Exportando...' : 'Exportar a Excel'}
+          </button>
+        </div>
       </form>
 
       {loading && (
@@ -170,6 +243,12 @@ function ReporteAsistencia() {
       {error && (
         <p className="error">
           Error: {error.message}
+        </p>
+      )}
+
+      {errorExportacion && (
+        <p className="error">
+          {errorExportacion}
         </p>
       )}
 
@@ -198,7 +277,7 @@ function ReporteAsistencia() {
                     )}
 
                     {grupo.tipo && (
-                      <h3>{grupo.tipo}</h3>
+                      <h3>{etiquetaTipo(grupo.tipo)}</h3>
                     )}
                   </div>
 

@@ -871,3 +871,23 @@ select {
 .login-enlace a:hover {
   text-decoration: underline;
 }
+/* =========================
+   REPORTE: EXPORTAR A EXCEL
+   ========================= */
+
+.reporte-aclaracion {
+  margin-top: 6px;
+  color: #77706a;
+  font-size: 13px;
+}
+
+.reporte-acciones {
+  display: flex;
+  align-self: end;
+  gap: 12px;
+}
+
+.reporte-acciones .boton-generar:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
