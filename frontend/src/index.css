@@ -891,3 +891,105 @@ select {
   background-color: #ccc;
   cursor: not-allowed;
 }
+
+/* =========================
+   EVENTOS
+   ========================= */
+
+.eventos-encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.estado.inscripto {
+  background-color: #dff2df;
+  color: #276327;
+  margin-right: 8px;
+}
+
+.estado.finalizado {
+  background-color: #eee;
+  color: #555;
+  margin-right: 8px;
+}
+
+.estado.completo {
+  background-color: #f9e5e3;
+  color: #a33a32;
+}
+
+.motivo-deshabilitado {
+  margin-top: 8px;
+  color: #77706a;
+  font-size: 13px;
+}
+
+.detalle-evento-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.detalle-evento-acciones button {
+  padding: 9px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #333;
+  color: white;
+  font-size: 16px;
+}
+
+.detalle-evento-acciones button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* =========================
+   FORMULARIO DE EVENTO
+   ========================= */
+
+.formulario-evento {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.formulario-evento .campo textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.formulario-evento-acciones {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+}
+
+@media (max-width: 700px) {
+
+  .formulario-evento {
+    grid-template-columns: 1fr;
+  }
+
+  .eventos-encabezado {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+}
+
+.etiquetas-evento {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

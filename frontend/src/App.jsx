@@ -8,6 +8,9 @@ import {
 import { useEffect, useState } from 'react'
 import Catalogo from './pages/Catalogo'
 import DetalleObra from './pages/DetalleObra'
+import Eventos from './pages/Eventos'
+import DetalleEvento from './pages/DetalleEvento'
+import EditarEvento from './pages/EditarEvento'
 import ReporteAsistencia from './components/ReporteAsistencia'
 import Home from './components/Home'
 import Login from './components/Login'
@@ -39,6 +42,13 @@ function Navegacion({ user, onLogout }) {
           className="navegacion-link"
         >
           Colección
+        </Link>
+
+        <Link
+          to="/eventos"
+          className="navegacion-link"
+        >
+          Eventos
         </Link>
 
         {esGestor(user) && (
@@ -185,6 +195,40 @@ function App() {
         <Route
           path="/obra/:id"
           element={<DetalleObra />}
+        />
+
+        <Route
+          path="/eventos"
+          element={<Eventos usuario={user} />}
+        />
+
+        <Route
+          path="/eventos/nuevo"
+          element={
+            <RequiereRol
+              usuario={user}
+              roles={[ROLES.CURADOR, ROLES.ADMINISTRADOR]}
+            >
+              <EditarEvento />
+            </RequiereRol>
+          }
+        />
+
+        <Route
+          path="/eventos/:id/editar"
+          element={
+            <RequiereRol
+              usuario={user}
+              roles={[ROLES.CURADOR, ROLES.ADMINISTRADOR]}
+            >
+              <EditarEvento />
+            </RequiereRol>
+          }
+        />
+
+        <Route
+          path="/eventos/:id"
+          element={<DetalleEvento usuario={user} />}
         />
 
         <Route
