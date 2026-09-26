@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client/react'
 import { OBRA_DETALLE_QUERY } from '../graphql/queries'
+import ImagenObra from '../components/ImagenObra'
 
 function DetalleObra() {
   const { id } = useParams()
@@ -17,7 +18,7 @@ function DetalleObra() {
   )
 
   if (loading) {
-    return <p>Cargando obra...</p>
+    return <p className="ficha-mensaje">Cargando obra...</p>
   }
 
   if (error) {
@@ -34,7 +35,7 @@ function DetalleObra() {
 
   if (!obra) {
     return (
-      <section className="detalle-obra">
+      <section className="sin-permiso">
 
         <h2>Obra no encontrada</h2>
 
@@ -54,144 +55,123 @@ function DetalleObra() {
   }
 
   return (
-    <section className="detalle-obra">
+    <article className="ficha-obra">
 
       <Link
-        className="boton-volver"
+        className="ficha-volver"
         to="/coleccion"
       >
-        ← Volver a la colección
+        ← Colección
       </Link>
 
-      <div className="detalle-contenido">
+      <div className="ficha-contenido">
 
-        <div>
-
-          {obra.imagenUrl ? (
-
-            <img
-              className="detalle-imagen"
-              src={obra.imagenUrl}
-              alt={`Obra ${obra.titulo}`}
-            />
-
-          ) : (
-
-            <div className="obra-sin-imagen">
-              Sin imagen disponible
-            </div>
-
-          )}
-
+        <div className="ficha-imagen">
+          <ImagenObra
+            className="ficha-marco"
+            src={obra.imagenUrl}
+            alt={`${obra.titulo}, de ${obra.artista.nombre}`}
+          />
         </div>
 
-        <div className="detalle-informacion">
+        <div className="ficha-texto">
 
-          <h2>
+          <p className="rotulo">{obra.epoca}</p>
+
+          <h1 className="ficha-titulo">
             {obra.titulo}
-          </h2>
+          </h1>
 
-          <p className="obra-artista">
+          <p className="ficha-artista">
             {obra.artista.nombre}
           </p>
 
-          <p>
-            <strong>Año:</strong>{' '}
-            {obra.anioCreacion}
-          </p>
+          <dl className="ficha-datos">
+            <div>
+              <dt>Año</dt>
+              <dd>{obra.anioCreacion}</dd>
+            </div>
 
-          <p>
-            <strong>Técnica:</strong>{' '}
-            {obra.tecnica}
-          </p>
+            <div>
+              <dt>Técnica</dt>
+              <dd>{obra.tecnica}</dd>
+            </div>
 
-          <p>
-            <strong>Dimensiones:</strong>{' '}
-            {obra.dimensiones}
-          </p>
+            <div>
+              <dt>Dimensiones</dt>
+              <dd>{obra.dimensiones}</dd>
+            </div>
 
-          <p>
-            <strong>Época:</strong>{' '}
-            {obra.epoca}
-          </p>
+            <div>
+              <dt>Ubicación</dt>
+              <dd>{obra.ubicacion}</dd>
+            </div>
 
-          <p>
-            <strong>Ubicación:</strong>{' '}
-            {obra.ubicacion}
-          </p>
+            <div>
+              <dt>Estado</dt>
+              <dd>
+                <span
+                  className={
+                    obra.enExhibicion
+                      ? 'estado exhibicion'
+                      : 'estado deposito'
+                  }
+                >
+                  {obra.enExhibicion
+                    ? 'En exhibición'
+                    : 'En depósito'}
+                </span>
+              </dd>
+            </div>
+          </dl>
 
-          <span
-            className={
-              obra.enExhibicion
-                ? 'estado exhibicion'
-                : 'estado deposito'
-            }
-          >
-            {obra.enExhibicion
-              ? 'En exhibición'
-              : 'En depósito'}
-          </span>
-
-          <h3>Descripción</h3>
-
-          <p className="detalle-descripcion">
+          <p className="ficha-descripcion">
             {obra.descripcion}
           </p>
 
-          <h3>Sobre el artista</h3>
+          <section className="ficha-seccion">
+            <h2 className="rotulo">Sobre el artista</h2>
 
-          <p className="detalle-descripcion">
-            {obra.artista.biografia}
-          </p>
+            <p>
+              {obra.artista.biografia}
+            </p>
+          </section>
 
-          <div className="detalle-comentarios">
-
-            <h3>Comentarios</h3>
+          <section className="ficha-seccion">
+            <h2 className="rotulo">
+              Comentarios ({obra.comentarios.length})
+            </h2>
 
             {obra.comentarios.length === 0 ? (
 
-              <p className="sin-comentarios">
+              <p className="ficha-vacio">
                 No hay comentarios todavía.
               </p>
 
             ) : (
 
-              obra.comentarios.map(
-                (comentario, index) => (
-
-                  <div
-                    className="comentario"
-                    key={index}
-                  >
-
-                    <p>
-                      <strong>
-                        {comentario.usuario}
-                      </strong>
-                    </p>
-
-                    <p>
+              <ul className="comentarios-lista">
+                {obra.comentarios.map((comentario, index) => (
+                  <li key={index}>
+                    <p className="comentario-texto">
                       {comentario.texto}
                     </p>
 
-                    <small>
-                      {comentario.fecha}
-                    </small>
-
-                  </div>
-
-                )
-              )
+                    <p className="comentario-autor">
+                      {comentario.usuario} · {comentario.fecha}
+                    </p>
+                  </li>
+                ))}
+              </ul>
 
             )}
-
-          </div>
+          </section>
 
         </div>
 
       </div>
 
-    </section>
+    </article>
   )
 }
 

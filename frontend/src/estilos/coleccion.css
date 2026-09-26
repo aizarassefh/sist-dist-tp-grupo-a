@@ -1,0 +1,244 @@
+/* =========================
+   COLECCIÓN: PARED DE GALERÍA
+   La obra es lo dominante. Se muestra entera (contain, nunca recortada)
+   sobre un paspartú, y debajo va la cartela como en sala.
+   ========================= */
+
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--espacio-7) var(--espacio-6);
+  align-items: start;
+  transition: opacity 0.2s;
+}
+
+/* Resultados anteriores atenuados mientras llega la búsqueda nueva. */
+.galeria.actualizando {
+  opacity: 0.5;
+}
+
+.pieza-enlace {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pieza-marco {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  padding: var(--espacio-5);
+  background-color: var(--papel-hundido);
+  object-fit: contain;
+  transition: background-color 0.2s;
+}
+
+.pieza-enlace:hover .pieza-marco {
+  background-color: #e0d9cc;
+}
+
+.pieza-enlace:hover .cartela-titulo {
+  color: var(--acento);
+}
+
+.cartela {
+  margin-top: var(--espacio-4);
+  padding-left: var(--espacio-3);
+  border-left: 1px solid var(--linea-fuerte);
+}
+
+.cartela-titulo {
+  margin: 0;
+  font-size: 21px;
+  font-style: italic;
+  transition: color 0.15s;
+}
+
+.cartela-artista {
+  margin: var(--espacio-1) 0 0;
+  font-size: 14px;
+}
+
+.cartela-datos {
+  margin: 2px 0 0;
+  color: var(--tinta-tenue);
+  font-size: 13px;
+}
+
+.cartela .estado {
+  margin-bottom: 0;
+}
+
+.imagen-no-disponible {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tinta-tenue);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* =========================
+   FICHA DE OBRA
+   La imagen grande a la izquierda y a la derecha una cartela ampliada:
+   datos técnicos en filas, como en un catálogo razonado.
+   ========================= */
+
+.ficha-obra {
+  margin-top: var(--espacio-6);
+}
+
+.ficha-volver {
+  display: inline-block;
+  margin-bottom: var(--espacio-5);
+  color: var(--tinta-suave);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.ficha-volver:hover {
+  color: var(--acento);
+}
+
+.ficha-contenido {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--espacio-7);
+  align-items: start;
+}
+
+/* La obra queda a la vista mientras se lee la ficha. */
+.ficha-imagen {
+  position: sticky;
+  top: var(--espacio-5);
+}
+
+.ficha-marco {
+  display: block;
+  width: 100%;
+  max-height: 82vh;
+  padding: var(--espacio-6);
+  background-color: var(--papel-hundido);
+  object-fit: contain;
+}
+
+.ficha-marco.imagen-no-disponible {
+  aspect-ratio: 4 / 5;
+}
+
+.ficha-titulo {
+  margin: 0;
+  font-size: clamp(34px, 4vw, 52px);
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+.ficha-artista {
+  margin: var(--espacio-2) 0 var(--espacio-6);
+  color: var(--tinta-suave);
+  font-size: 18px;
+}
+
+.ficha-datos {
+  margin: 0 0 var(--espacio-6);
+  border-top: 1px solid var(--tinta);
+}
+
+.ficha-datos div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--espacio-4);
+  padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.ficha-datos dt {
+  padding-top: 2px;
+  color: var(--tinta-tenue);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ficha-datos dd {
+  margin: 0;
+}
+
+.ficha-datos .estado {
+  margin: 0;
+}
+
+.ficha-descripcion {
+  max-width: var(--ancho-lectura);
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+.ficha-seccion {
+  margin-top: var(--espacio-6);
+  padding-top: var(--espacio-4);
+  border-top: 1px solid var(--linea);
+}
+
+.ficha-seccion > p {
+  max-width: var(--ancho-lectura);
+  color: var(--tinta-suave);
+}
+
+.ficha-vacio {
+  font-style: italic;
+}
+
+.comentarios-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comentarios-lista li {
+  padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.comentarios-lista li:last-child {
+  border-bottom: none;
+}
+
+.comentario-texto {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 17px;
+}
+
+.comentario-autor {
+  margin: var(--espacio-1) 0 0;
+  color: var(--tinta-tenue);
+  font-size: 13px;
+}
+
+.ficha-mensaje {
+  margin-top: var(--espacio-7);
+  color: var(--tinta-suave);
+}
+
+@media (max-width: 800px) {
+
+  .ficha-contenido {
+    grid-template-columns: 1fr;
+    gap: var(--espacio-6);
+  }
+
+  .ficha-imagen {
+    position: static;
+  }
+
+  .ficha-marco {
+    padding: var(--espacio-4);
+  }
+
+}

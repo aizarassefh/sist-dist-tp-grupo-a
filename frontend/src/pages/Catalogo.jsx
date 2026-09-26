@@ -80,10 +80,11 @@ function Catalogo() {
 
       <header className="encabezado">
 
-        <h1>Museo Virtual</h1>
+        <h1>La colección</h1>
 
         <p>
-          Explorá nuestra colección de obras de arte
+          Pinturas del Renacimiento al siglo XX. Buscá por título,
+          artista, época, técnica o sala.
         </p>
 
       </header>
@@ -94,8 +95,6 @@ function Catalogo() {
       />
 
       <section className="catalogo">
-
-        <h2>Obras de la colección</h2>
 
         {primeraCarga && (
           <p>Cargando obras...</p>
@@ -119,7 +118,7 @@ function Catalogo() {
           )}
 
         <div
-          className={loading ? 'obras actualizando' : 'obras'}
+          className={loading ? 'galeria actualizando' : 'galeria'}
           aria-busy={loading}
         >
 

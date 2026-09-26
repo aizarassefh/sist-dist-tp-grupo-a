@@ -1,72 +1,37 @@
 import { Link } from 'react-router-dom'
+import ImagenObra from './ImagenObra'
 
+// Una pieza colgada en la pared: la obra manda y debajo va la cartela, como
+// en sala. Toda la pieza lleva al detalle.
 function Obra({ obra }) {
   return (
-    <article className="obra">
+    <article className="pieza">
+      <Link className="pieza-enlace" to={`/obra/${obra.id}`}>
 
-      {obra.imagenUrl ? (
-
-        <img
-          className="obra-imagen"
+        <ImagenObra
+          className="pieza-marco"
+          diferida
           src={obra.imagenUrl}
-          alt={`Obra ${obra.titulo}`}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none'
-          }}
+          alt={`${obra.titulo}, de ${obra.artista.nombre}`}
         />
 
-      ) : (
+        <div className="cartela">
+          <h2 className="cartela-titulo">{obra.titulo}</h2>
 
-        <div className="obra-sin-imagen">
-          Sin imagen disponible
+          <p className="cartela-artista">
+            {obra.artista.nombre}, {obra.anioCreacion}
+          </p>
+
+          <p className="cartela-datos">
+            {obra.epoca} · {obra.ubicacion}
+          </p>
+
+          <span className={obra.enExhibicion ? 'estado exhibicion' : 'estado deposito'}>
+            {obra.enExhibicion ? 'En exhibición' : 'En depósito'}
+          </span>
         </div>
 
-      )}
-
-      <div className="obra-informacion">
-
-        <h2>{obra.titulo}</h2>
-
-        <p className="obra-artista">
-          {obra.artista.nombre}
-        </p>
-
-        <p>
-          <strong>Año:</strong>{' '}
-          {obra.anioCreacion}
-        </p>
-
-        <p>
-          <strong>Época:</strong>{' '}
-          {obra.epoca}
-        </p>
-
-        <p>
-          <strong>Ubicación:</strong>{' '}
-          {obra.ubicacion}
-        </p>
-
-        <span
-          className={
-            obra.enExhibicion
-              ? 'estado exhibicion'
-              : 'estado deposito'
-          }
-        >
-          {obra.enExhibicion
-            ? 'En exhibición'
-            : 'En depósito'}
-        </span>
-
-        <Link
-          className="boton-detalle"
-          to={`/obra/${obra.id}`}
-        >
-          Ver detalles
-        </Link>
-
-      </div>
-
+      </Link>
     </article>
   )
 }

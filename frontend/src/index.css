@@ -1,6 +1,7 @@
 /* Sistema y piezas comunes; cada pantalla tiene su sección más abajo. */
 @import './estilos/base.css';
 @import './estilos/navegacion.css';
+@import './estilos/coleccion.css';
 
 /* =========================
    CATÁLOGO
@@ -34,63 +35,9 @@
   color: #666;
 }
 
-.obra-descripcion {
-  line-height: 1.5;
-}
-
-/* =========================
-   IMÁGENES DE OBRAS
-   ========================= */
-
-.obra-imagen {
-  width: 100%;
-  height: 280px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.obra-sin-imagen {
-  width: 100%;
-  height: 280px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #e8e4dc;
-  color: #777;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
 /* =========================
    COMENTARIOS
    ========================= */
-
-.comentarios {
-  margin-top: 25px;
-  padding-top: 20px;
-  border-top: 1px solid #ddd;
-}
-
-.comentarios h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-}
-
-.comentario {
-  padding: 12px;
-  margin-bottom: 10px;
-  background-color: #f7f5f1;
-  border-radius: 8px;
-}
-
-.comentario p {
-  margin: 5px 0;
-}
-
-.comentario small {
-  color: #777;
-}
 
 .sin-comentarios {
   color: #777;
@@ -106,30 +53,6 @@
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.detalle-contenido {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-}
-
-.detalle-imagen {
-  width: 100%;
-  max-height: 600px;
-  object-fit: contain;
-  border-radius: 8px;
-  background-color: #f4f1eb;
-}
-
-.detalle-informacion h2 {
-  margin-top: 0;
-  font-size: 34px;
-}
-
-.detalle-informacion h3 {
-  margin-top: 25px;
-  margin-bottom: 10px;
 }
 
 .detalle-descripcion {
@@ -420,14 +343,6 @@
     grid-template-columns: 1fr;
   }
 
-  .detalle-contenido {
-    grid-template-columns: 1fr;
-  }
-
-  .detalle-informacion h2 {
-    font-size: 28px;
-  }
-
   .reporte-filtros {
     grid-template-columns: 1fr;
   }
@@ -619,10 +534,4 @@
     flex-wrap: wrap;
   }
 
-}
-
-/* Resultados anteriores atenuados mientras llega la búsqueda nueva. */
-.obras.actualizando {
-  opacity: 0.5;
-  transition: opacity 0.2s;
 }
