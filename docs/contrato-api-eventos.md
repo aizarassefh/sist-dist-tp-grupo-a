@@ -134,7 +134,13 @@ que uno inexistente, para no revelar que existe.
 ```
 
 `filtros` tiene los mismos campos que los filtros del listado de eventos.
-Los que no se usan van en `null`.
+Los que no se usan van en `null`. `descripcion` es opcional y puede venir
+en `null`.
+
+**Cómo se aplica un favorito:** el frontend navega al listado de eventos
+con esos filtros (`/eventos?tipo=TALLER&...`), que llama a
+`GET /api/eventos` como cualquier búsqueda. Por eso el backend **no
+necesita** `GET /api/filtros-favoritos/{id}/eventos`: queda como opcional.
 
 | Método y ruta | Respuesta |
 |---|---|
@@ -142,7 +148,7 @@ Los que no se usan van en `null`.
 | `POST /api/filtros-favoritos` | 201 favorito creado; 400 |
 | `PUT /api/filtros-favoritos/{id}` | 200 favorito; 400; 404 |
 | `DELETE /api/filtros-favoritos/{id}` | 204; 404 |
-| `GET /api/filtros-favoritos/{id}/eventos?pagina=0&tamanio=10` | 200 página de eventos, mismo formato que el listado; 404 |
+| `GET /api/filtros-favoritos/{id}/eventos?pagina=0&tamanio=10` | **Opcional, el frontend no lo usa.** 200 página de eventos; 404 |
 
 El cuerpo de `POST` y `PUT` es el favorito sin `id`.
 
