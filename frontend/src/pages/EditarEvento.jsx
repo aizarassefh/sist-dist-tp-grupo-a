@@ -118,12 +118,14 @@ function EditarEvento() {
   }
 
   return (
-    <section className="detalle-obra">
+    <section className="formulario-pagina">
 
-      <h2>{id ? 'Editar evento' : 'Nuevo evento'}</h2>
+      <p className="rotulo">Agenda del museo</p>
+
+      <h1>{id ? 'Editar evento' : 'Nuevo evento'}</h1>
 
       {cargando && (
-        <p>Cargando evento...</p>
+        <p className="ficha-mensaje">Cargando evento...</p>
       )}
 
       {errorCarga && (

@@ -388,3 +388,89 @@ textarea:focus-visible {
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
+
+/* =========================
+   MÁS BOTONES
+   ========================= */
+
+.boton-secundario {
+  background-color: transparent;
+  border-color: var(--linea-fuerte);
+  color: var(--tinta);
+}
+
+.boton-secundario:hover {
+  background-color: transparent;
+  border-color: var(--tinta);
+  color: var(--tinta);
+}
+
+/* Borrar es irreversible: se distingue sin llegar a ser la acción principal. */
+.boton-peligro {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--error);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.boton-peligro:hover {
+  background-color: transparent;
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.campo-ancho {
+  grid-column: 1 / -1;
+}
+
+.campo-error {
+  margin: 0;
+  color: var(--error);
+  font-size: 13px;
+}
+
+/* =========================
+   FICHAS
+   Piezas de lectura que comparten la ficha de obra y la de evento.
+   ========================= */
+
+.enlace-volver {
+  display: inline-block;
+  margin-bottom: var(--espacio-5);
+  color: var(--tinta-suave);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.enlace-volver:hover {
+  color: var(--acento);
+}
+
+.ficha-descripcion {
+  max-width: var(--ancho-lectura);
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+.ficha-seccion {
+  margin-top: var(--espacio-6);
+  padding-top: var(--espacio-4);
+  border-top: 1px solid var(--linea);
+}
+
+.ficha-seccion > p {
+  max-width: var(--ancho-lectura);
+  color: var(--tinta-suave);
+}
+
+.ficha-vacio {
+  font-style: italic;
+}
+
+.ficha-mensaje {
+  margin-top: var(--espacio-7);
+  color: var(--tinta-suave);
+}

@@ -13,6 +13,23 @@ const FORMATO_FECHA_HORA = new Intl.DateTimeFormat('es-AR', {
   hour12: false
 })
 
+const FORMATO_MES_ANIO = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' })
+const FORMATO_DIA_SEMANA = new Intl.DateTimeFormat('es-AR', { weekday: 'short' })
+const FORMATO_HORA = new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+// Piezas sueltas de una fecha, para la agenda: el día en grande, el día de
+// la semana, la hora y el mes con que se agrupan los eventos.
+export function partesDeFecha(texto) {
+  const fecha = new Date(texto)
+
+  return {
+    dia: fecha.getDate(),
+    diaSemana: FORMATO_DIA_SEMANA.format(fecha).replace('.', ''),
+    hora: FORMATO_HORA.format(fecha),
+    mesAnio: FORMATO_MES_ANIO.format(fecha)
+  }
+}
+
 export function formatearFechaHora(texto) {
   return FORMATO_FECHA_HORA.format(new Date(texto))
 }

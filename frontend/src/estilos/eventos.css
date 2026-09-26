@@ -1,0 +1,357 @@
+/* =========================
+   EVENTOS: AGENDA
+   Un evento se elige por cuándo es: la fecha va primero, en grande, y los
+   eventos se agrupan por mes. Filas y no tarjetas, para que no se parezca
+   a la colección.
+   ========================= */
+
+.eventos-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--espacio-3);
+  margin-bottom: var(--espacio-5);
+}
+
+.eventos-total {
+  margin: 0;
+}
+
+.eventos-encabezado-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-3);
+}
+
+.agenda-mes + .agenda-mes {
+  margin-top: var(--espacio-7);
+}
+
+.agenda-mes-titulo {
+  margin: 0;
+  padding-bottom: var(--espacio-2);
+  border-bottom: 1px solid var(--tinta);
+  font-size: 28px;
+}
+
+/* Intl da "octubre de 2026"; capitalize pondría también "De". */
+.agenda-mes-titulo::first-letter {
+  text-transform: uppercase;
+}
+
+.agenda-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agenda-fila {
+  border-bottom: 1px solid var(--linea);
+}
+
+.agenda-enlace {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 220px;
+  gap: var(--espacio-5);
+  align-items: center;
+  padding: var(--espacio-4) var(--espacio-2);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.agenda-enlace:hover {
+  background-color: var(--papel-claro);
+}
+
+.agenda-enlace:hover .agenda-titulo {
+  color: var(--acento);
+}
+
+.agenda-fecha {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.agenda-dia {
+  font-family: var(--serif);
+  font-size: 40px;
+  line-height: 1;
+  font-variant-numeric: lining-nums;
+}
+
+.agenda-semana {
+  margin-top: var(--espacio-1);
+  color: var(--tinta-tenue);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.agenda-meta {
+  margin: 0;
+  color: var(--tinta-tenue);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agenda-titulo {
+  margin: 2px 0;
+  font-size: 22px;
+  transition: color 0.15s;
+}
+
+.agenda-curador {
+  margin: 0;
+  color: var(--tinta-suave);
+  font-size: 14px;
+}
+
+.agenda-estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-3);
+  margin: var(--espacio-1) 0 0;
+}
+
+.agenda-estados .estado {
+  margin: 0;
+}
+
+.agenda-fila.pasado .agenda-dia,
+.agenda-fila.pasado .agenda-titulo {
+  color: var(--tinta-tenue);
+}
+
+/* =========================
+   CUPO
+   ========================= */
+
+.cupo-barra {
+  height: 4px;
+  overflow: hidden;
+  background-color: var(--linea);
+}
+
+.cupo-barra span {
+  display: block;
+  height: 100%;
+  background-color: var(--tinta);
+}
+
+.cupo.lleno .cupo-barra span {
+  background-color: var(--acento);
+}
+
+.cupo-texto {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+.cupo-texto span {
+  color: var(--tinta-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.cupo.lleno .cupo-texto {
+  color: var(--acento);
+  font-weight: 600;
+}
+
+/* =========================
+   FICHA DE EVENTO
+   La fecha en grande como en un afiche, y a la derecha un único bloque de
+   acción: el cupo y el botón de inscripción son lo que se viene a buscar.
+   ========================= */
+
+.ficha-evento {
+  margin-top: var(--espacio-6);
+}
+
+.evento-cabecera {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: var(--espacio-6);
+  align-items: start;
+  padding-bottom: var(--espacio-6);
+  border-bottom: 1px solid var(--tinta);
+}
+
+.evento-fecha {
+  display: flex;
+  flex-direction: column;
+  padding-right: var(--espacio-5);
+  border-right: 1px solid var(--linea);
+}
+
+.evento-dia {
+  font-family: var(--serif);
+  font-size: 96px;
+  line-height: 0.9;
+}
+
+.evento-mes {
+  margin-top: var(--espacio-2);
+  font-family: var(--serif);
+  font-size: 20px;
+}
+
+.evento-mes::first-letter {
+  text-transform: uppercase;
+}
+
+.evento-hora {
+  margin-top: var(--espacio-2);
+  color: var(--tinta-tenue);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.evento-titulo {
+  margin: 0;
+  font-size: clamp(34px, 4vw, 52px);
+  letter-spacing: -0.01em;
+}
+
+.evento-curador {
+  margin: var(--espacio-3) 0 0;
+  color: var(--tinta-suave);
+  font-size: 17px;
+}
+
+.evento-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--espacio-7);
+  align-items: start;
+  margin-top: var(--espacio-6);
+}
+
+.evento-lateral {
+  position: sticky;
+  top: var(--espacio-5);
+  padding: var(--espacio-5);
+  border-top: 3px solid var(--acento);
+  background-color: var(--papel-claro);
+}
+
+.evento-lateral .cupo {
+  margin-bottom: var(--espacio-5);
+}
+
+.evento-lateral .error {
+  margin: 0 0 var(--espacio-4);
+}
+
+.evento-accion {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 15px;
+}
+
+.evento-gestion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--espacio-5);
+  padding-top: var(--espacio-4);
+  border-top: 1px solid var(--linea);
+}
+
+.inscriptos-lista {
+  margin: 0;
+  padding-left: 1.4em;
+  columns: 2;
+  column-gap: var(--espacio-6);
+}
+
+.inscriptos-lista li {
+  margin: var(--espacio-1) 0;
+  break-inside: avoid;
+}
+
+/* =========================
+   FORMULARIO DE EVENTO
+   ========================= */
+
+.formulario-pagina {
+  max-width: 760px;
+  margin-top: var(--espacio-7);
+}
+
+.formulario-pagina h1 {
+  margin: 0 0 var(--espacio-6);
+  font-size: clamp(34px, 4vw, 48px);
+}
+
+.formulario-evento {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espacio-5);
+}
+
+.formulario-evento > .error {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.formulario-evento-acciones {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--espacio-3);
+  padding-top: var(--espacio-4);
+  border-top: 1px solid var(--linea);
+}
+
+@media (max-width: 800px) {
+
+  .evento-cabecera,
+  .evento-cuerpo {
+    grid-template-columns: 1fr;
+  }
+
+  .evento-fecha {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--espacio-3);
+    padding-right: 0;
+    border-right: none;
+  }
+
+  .evento-dia {
+    font-size: 56px;
+  }
+
+  .evento-lateral {
+    position: static;
+  }
+
+}
+
+@media (max-width: 700px) {
+
+  .agenda-enlace {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: var(--espacio-4);
+  }
+
+  .agenda-cupo {
+    grid-column: 2;
+  }
+
+  .formulario-evento {
+    grid-template-columns: 1fr;
+  }
+
+  .inscriptos-lista {
+    columns: 1;
+  }
+
+}

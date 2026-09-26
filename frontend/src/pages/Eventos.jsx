@@ -2,61 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorApi, mensajeDeError, pedir } from '../api/cliente'
 import { esGestor } from '../roles'
-import { etiquetaTipo } from '../tiposEvento'
-import { formatearFechaHora, yaComenzo } from '../fechas'
 import { CAMPOS_FILTRO_EVENTOS, filtrosDesdeBusqueda, filtrosParaGuardar } from '../filtrosEventos'
 import FiltrosEventos from '../components/FiltrosEventos'
 import ResumenFiltros from '../components/ResumenFiltros'
+import AgendaEventos from '../components/AgendaEventos'
 
 const TAMANIO_PAGINA = 10
-
-function TarjetaEvento({ evento, busqueda }) {
-  const comenzo = yaComenzo(evento.fechaHora)
-  const completo = evento.cantidadInscriptos >= evento.cupoMaximo
-
-  return (
-    <article className="obra">
-
-      <h2>{evento.titulo}</h2>
-
-      <p className="obra-artista">
-        {etiquetaTipo(evento.tipo)}
-      </p>
-
-      <p>{formatearFechaHora(evento.fechaHora)}</p>
-
-      <p>{evento.duracionMinutos} minutos</p>
-
-      <p>{evento.curadorResponsable.nombre}</p>
-
-      <p>
-        {evento.cantidadInscriptos} / {evento.cupoMaximo} inscriptos
-      </p>
-
-      <div className="etiquetas-evento">
-        {evento.inscripto && (
-          <span className="estado inscripto">Inscripto</span>
-        )}
-        {comenzo && (
-          <span className="estado finalizado">Finalizado</span>
-        )}
-        {completo && (
-          <span className="estado completo">Completo</span>
-        )}
-      </div>
-
-      {/* El detalle recibe a qué listado volver, con los filtros actuales. */}
-      <Link
-        className="boton-detalle"
-        to={`/eventos/${evento.id}`}
-        state={{ volverA: `/eventos${busqueda ? `?${busqueda}` : ''}` }}
-      >
-        Ver detalle
-      </Link>
-
-    </article>
-  )
-}
 
 // Los filtros y la página viven en la URL (no en useState) para que se
 // conserven al recargar, al volver del detalle, y para que más adelante un
@@ -233,10 +184,12 @@ function Eventos({ usuario }) {
         onCambiarFiltro={cambiarFiltro}
       />
 
-      <section className="catalogo">
+      <section className="eventos">
 
         <div className="eventos-encabezado">
-          <h2>Eventos</h2>
+          <p className="rotulo eventos-total">
+            {cargando || backendNoDisponible ? 'Agenda' : `${total} ${total === 1 ? 'evento' : 'eventos'}`}
+          </p>
 
           <div className="eventos-encabezado-acciones">
             <button
@@ -345,15 +298,10 @@ function Eventos({ usuario }) {
 
         {!cargando && !backendNoDisponible && !error && eventos.length > 0 && (
           <>
-            <div className="obras">
-              {eventos.map((evento) => (
-                <TarjetaEvento
-                  key={evento.id}
-                  evento={evento}
-                  busqueda={searchParams.toString()}
-                />
-              ))}
-            </div>
+            <AgendaEventos
+              eventos={eventos}
+              volverA={`/eventos${searchParams.toString() ? `?${searchParams}` : ''}`}
+            />
 
             <div className="paginacion">
               <button

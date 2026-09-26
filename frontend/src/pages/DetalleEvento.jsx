@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ErrorApi, mensajeDeError, pedir } from '../api/cliente'
 import { esGestor } from '../roles'
-import { etiquetaTipo } from '../tiposEvento'
-import { formatearFechaHora, yaComenzo } from '../fechas'
+import { nombreTipo } from '../tiposEvento'
+import { partesDeFecha, yaComenzo } from '../fechas'
+import CupoEvento from '../components/CupoEvento'
 
 function DetalleEvento({ usuario }) {
   const { id } = useParams()
@@ -105,13 +106,13 @@ function DetalleEvento({ usuario }) {
   }
 
   if (cargando) {
-    return <p>Cargando evento...</p>
+    return <p className="ficha-mensaje">Cargando evento...</p>
   }
 
   if (noExiste) {
     return (
-      <section className="detalle-obra">
-        <h2>El evento no existe.</h2>
+      <section className="sin-permiso">
+        <h2>El evento no existe</h2>
 
         <Link className="boton-volver" to="/eventos">
           ← Volver a eventos
@@ -134,130 +135,139 @@ function DetalleEvento({ usuario }) {
 
   const comenzo = yaComenzo(evento.fechaHora)
   const completo = evento.cantidadInscriptos >= evento.cupoMaximo
+  const { dia, diaSemana, hora, mesAnio } = partesDeFecha(evento.fechaHora)
 
   return (
-    <section className="detalle-obra">
+    <article className="ficha-evento">
 
       {/* No se usa navigate(-1): si se llega desde el formulario o por URL
           directa, "atrás" no es el listado. El listado pasa sus filtros. */}
       <Link
-        className="boton-volver"
+        className="enlace-volver"
         to={location.state?.volverA ?? '/eventos'}
       >
-        ← Volver a eventos
+        ← Eventos
       </Link>
 
-      <h2>{evento.titulo}</h2>
+      <header className="evento-cabecera">
+        <div className="evento-fecha">
+          <span className="evento-dia">{dia}</span>
+          <span className="evento-mes">{mesAnio}</span>
+          <span className="evento-hora">{diaSemana} · {hora} h</span>
+        </div>
 
-      <p className="obra-artista">
-        {etiquetaTipo(evento.tipo)}
-      </p>
+        <div>
+          <p className="rotulo">{nombreTipo(evento.tipo)}</p>
 
-      <p>
-        <strong>Fecha y hora:</strong>{' '}
-        {formatearFechaHora(evento.fechaHora)}
-      </p>
+          <h1 className="evento-titulo">{evento.titulo}</h1>
 
-      <p>
-        <strong>Duración:</strong>{' '}
-        {evento.duracionMinutos} minutos
-      </p>
+          <p className="evento-curador">
+            Con {evento.curadorResponsable.nombre} · {evento.duracionMinutos} minutos
+          </p>
 
-      <p>
-        <strong>Curador responsable:</strong>{' '}
-        {evento.curadorResponsable.nombre}
-      </p>
-
-      <p>
-        <strong>Cupo:</strong>{' '}
-        {evento.cantidadInscriptos} / {evento.cupoMaximo} inscriptos
-      </p>
-
-      <div className="etiquetas-evento">
-        {comenzo && (
-          <span className="estado finalizado">Finalizado</span>
-        )}
-        {completo && (
-          <span className="estado completo">Completo</span>
-        )}
-        {evento.inscripto && (
-          <span className="estado inscripto">Inscripto</span>
-        )}
-      </div>
-
-      <h3>Descripción</h3>
-
-      <p className="detalle-descripcion">
-        {evento.descripcion}
-      </p>
-
-      {esGestor(usuario) ? (
-        <div className="detalle-comentarios">
-          <h3>Inscriptos ({evento.inscriptos.length})</h3>
-
-          {evento.inscriptos.length === 0 ? (
-            <p className="sin-comentarios">No hay inscriptos todavía.</p>
-          ) : (
-            <ul>
-              {evento.inscriptos.map((inscripto) => (
-                <li key={inscripto.id}>{inscripto.nombre}</li>
-              ))}
-            </ul>
+          {(evento.inscripto || comenzo) && (
+            <p className="agenda-estados">
+              {evento.inscripto && (
+                <span className="estado inscripto">Estás inscripto</span>
+              )}
+              {comenzo && (
+                <span className="estado">Pasado</span>
+              )}
+            </p>
           )}
         </div>
-      ) : null}
+      </header>
 
-      {errorAccion && (
-        <p className="error">{errorAccion}</p>
-      )}
+      <div className="evento-cuerpo">
 
-      <div className="detalle-evento-acciones">
-        {evento.inscripto ? (
-          <button
-            type="button"
-            disabled={accionEnCurso}
-            onClick={cancelarInscripcion}
-          >
-            Cancelar inscripción
-          </button>
-        ) : (
-          <>
+        <div className="evento-texto">
+          <p className="ficha-descripcion">
+            {evento.descripcion}
+          </p>
+
+          {esGestor(usuario) && (
+            <section className="ficha-seccion">
+              <h2 className="rotulo">
+                Inscriptos ({evento.inscriptos.length})
+              </h2>
+
+              {evento.inscriptos.length === 0 ? (
+                <p className="ficha-vacio">No hay inscriptos todavía.</p>
+              ) : (
+                <ol className="inscriptos-lista">
+                  {evento.inscriptos.map((inscripto) => (
+                    <li key={inscripto.id}>{inscripto.nombre}</li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          )}
+        </div>
+
+        {/* Columna de acción: el cupo y lo que el usuario puede hacer. */}
+        <aside className="evento-lateral">
+          <h2 className="rotulo">Cupo</h2>
+
+          <CupoEvento
+            inscriptos={evento.cantidadInscriptos}
+            cupo={evento.cupoMaximo}
+          />
+
+          {errorAccion && (
+            <p className="error">{errorAccion}</p>
+          )}
+
+          {evento.inscripto ? (
             <button
-              type="button"
-              disabled={accionEnCurso || comenzo || completo}
-              onClick={inscribirse}
-            >
-              Inscribirme
-            </button>
-
-            {(comenzo || completo) && (
-              <p className="motivo-deshabilitado">
-                {comenzo
-                  ? 'El evento ya comenzó.'
-                  : 'El evento está completo.'}
-              </p>
-            )}
-          </>
-        )}
-
-        {esGestor(usuario) && (
-          <>
-            <Link className="boton-detalle" to={`/eventos/${id}/editar`}>
-              Editar
-            </Link>
-
-            <button
+              className="boton-secundario evento-accion"
               type="button"
               disabled={accionEnCurso}
-              onClick={eliminar}
+              onClick={cancelarInscripcion}
             >
-              Eliminar
+              Cancelar inscripción
             </button>
-          </>
-        )}
+          ) : (
+            <>
+              <button
+                className="evento-accion"
+                type="button"
+                disabled={accionEnCurso || comenzo || completo}
+                onClick={inscribirse}
+              >
+                Inscribirme
+              </button>
+
+              {(comenzo || completo) && (
+                <p className="motivo-deshabilitado">
+                  {comenzo
+                    ? 'El evento ya comenzó.'
+                    : 'El evento está completo.'}
+                </p>
+              )}
+            </>
+          )}
+
+          {esGestor(usuario) && (
+            <div className="evento-gestion">
+              <Link className="boton-limpiar" to={`/eventos/${id}/editar`}>
+                Editar
+              </Link>
+
+              <button
+                className="boton-peligro"
+                type="button"
+                disabled={accionEnCurso}
+                onClick={eliminar}
+              >
+                Eliminar
+              </button>
+            </div>
+          )}
+        </aside>
+
       </div>
 
-    </section>
+    </article>
   )
 }
 

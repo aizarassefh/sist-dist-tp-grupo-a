@@ -58,7 +58,7 @@ function DetalleObra() {
     <article className="ficha-obra">
 
       <Link
-        className="ficha-volver"
+        className="enlace-volver"
         to="/coleccion"
       >
         ← Colección

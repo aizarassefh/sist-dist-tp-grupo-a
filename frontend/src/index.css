@@ -2,66 +2,7 @@
 @import './estilos/base.css';
 @import './estilos/navegacion.css';
 @import './estilos/coleccion.css';
-
-/* =========================
-   CATÁLOGO
-   ========================= */
-
-.catalogo h2 {
-  margin-bottom: 20px;
-}
-
-.obras {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 25px;
-}
-
-.obra {
-  background-color: white;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.obra h2 {
-  margin-top: 0;
-  margin-bottom: 8px;
-}
-
-.obra-artista {
-  font-size: 18px;
-  font-style: italic;
-  color: #666;
-}
-
-/* =========================
-   COMENTARIOS
-   ========================= */
-
-.sin-comentarios {
-  color: #777;
-  font-style: italic;
-}
-
-/* =========================
-   DETALLE DE OBRA
-   ========================= */
-
-.detalle-obra {
-  background-color: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.detalle-descripcion {
-  line-height: 1.6;
-}
-
-.detalle-comentarios {
-  margin-top: 10px;
-}
+@import './estilos/eventos.css';
 
 /* =========================
    REPORTE
@@ -339,10 +280,6 @@
 
 @media (max-width: 700px) {
 
-  .obras {
-    grid-template-columns: 1fr;
-  }
-
   .reporte-filtros {
     grid-template-columns: 1fr;
   }
@@ -414,68 +351,8 @@
 }
 
 /* =========================
-   EVENTOS
-   ========================= */
-
-.eventos-encabezado {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.detalle-evento-acciones {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 25px;
-}
-
-/* =========================
-   FORMULARIO DE EVENTO
-   ========================= */
-
-.formulario-evento {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.formulario-evento-acciones {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 12px;
-}
-
-@media (max-width: 700px) {
-
-  .formulario-evento {
-    grid-template-columns: 1fr;
-  }
-
-  .eventos-encabezado {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-
-}
-
-.etiquetas-evento {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* =========================
    FILTROS FAVORITOS
    ========================= */
-
-.eventos-encabezado-acciones {
-  display: flex;
-  gap: 12px;
-}
 
 .guardar-filtro {
   background-color: white;
@@ -526,12 +403,4 @@
   display: flex;
   gap: 12px;
   margin-top: 15px;
-}
-
-@media (max-width: 700px) {
-
-  .eventos-encabezado-acciones {
-    flex-wrap: wrap;
-  }
-
 }

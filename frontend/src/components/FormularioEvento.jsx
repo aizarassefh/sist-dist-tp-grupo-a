@@ -76,7 +76,7 @@ function FormularioEvento({
   return (
     <form className="formulario-evento" onSubmit={manejarSubmit}>
 
-      <div className="campo">
+      <div className="campo campo-ancho">
         <label htmlFor="titulo">
           Título
         </label>
@@ -89,11 +89,11 @@ function FormularioEvento({
         />
 
         {erroresValidacion.titulo && (
-          <p className="error">{erroresValidacion.titulo}</p>
+          <p className="campo-error">{erroresValidacion.titulo}</p>
         )}
       </div>
 
-      <div className="campo">
+      <div className="campo campo-ancho">
         <label htmlFor="descripcion">
           Descripción
         </label>
@@ -106,7 +106,7 @@ function FormularioEvento({
         />
 
         {erroresValidacion.descripcion && (
-          <p className="error">{erroresValidacion.descripcion}</p>
+          <p className="campo-error">{erroresValidacion.descripcion}</p>
         )}
       </div>
 
@@ -122,13 +122,13 @@ function FormularioEvento({
         >
           {TIPOS_EVENTO.map((tipo) => (
             <option key={tipo.valor} value={tipo.valor}>
-              {tipo.etiqueta}
+              {tipo.singular}
             </option>
           ))}
         </select>
 
         {erroresValidacion.tipo && (
-          <p className="error">{erroresValidacion.tipo}</p>
+          <p className="campo-error">{erroresValidacion.tipo}</p>
         )}
       </div>
 
@@ -145,7 +145,7 @@ function FormularioEvento({
         />
 
         {erroresValidacion.fechaHora && (
-          <p className="error">{erroresValidacion.fechaHora}</p>
+          <p className="campo-error">{erroresValidacion.fechaHora}</p>
         )}
       </div>
 
@@ -163,7 +163,7 @@ function FormularioEvento({
         />
 
         {erroresValidacion.duracionMinutos && (
-          <p className="error">{erroresValidacion.duracionMinutos}</p>
+          <p className="campo-error">{erroresValidacion.duracionMinutos}</p>
         )}
       </div>
 
@@ -181,7 +181,7 @@ function FormularioEvento({
         />
 
         {erroresValidacion.cupoMaximo && (
-          <p className="error">{erroresValidacion.cupoMaximo}</p>
+          <p className="campo-error">{erroresValidacion.cupoMaximo}</p>
         )}
       </div>
 
@@ -205,7 +205,7 @@ function FormularioEvento({
         </select>
 
         {erroresValidacion.curadorId && (
-          <p className="error">{erroresValidacion.curadorId}</p>
+          <p className="campo-error">{erroresValidacion.curadorId}</p>
         )}
       </div>
 
@@ -215,7 +215,6 @@ function FormularioEvento({
 
       <div className="formulario-evento-acciones">
         <button
-          className="boton-generar"
           type="submit"
           disabled={enviando}
         >
@@ -223,7 +222,7 @@ function FormularioEvento({
         </button>
 
         <button
-          className="boton-volver"
+          className="boton-limpiar"
           type="button"
           onClick={onCancelar}
         >
