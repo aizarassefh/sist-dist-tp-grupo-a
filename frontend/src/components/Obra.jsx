@@ -37,11 +37,6 @@ function Obra({ obra }) {
         </p>
 
         <p>
-          <strong>Técnica:</strong>{' '}
-          {obra.tecnica}
-        </p>
-
-        <p>
           <strong>Época:</strong>{' '}
           {obra.epoca}
         </p>
@@ -62,51 +57,6 @@ function Obra({ obra }) {
             ? 'En exhibición'
             : 'En depósito'}
         </span>
-
-        <p className="obra-descripcion">
-          {obra.descripcion}
-        </p>
-
-        <div className="comentarios">
-
-          <h3>Comentarios</h3>
-
-          {obra.comentarios.length === 0 ? (
-
-            <p className="sin-comentarios">
-              No hay comentarios todavía.
-            </p>
-
-          ) : (
-
-            obra.comentarios.map((comentario, index) => (
-
-              <div
-                className="comentario"
-                key={index}
-              >
-
-                <p>
-                  <strong>
-                    {comentario.usuario}
-                  </strong>
-                </p>
-
-                <p>
-                  {comentario.texto}
-                </p>
-
-                <small>
-                  {comentario.fecha}
-                </small>
-
-              </div>
-
-            ))
-
-          )}
-
-        </div>
 
         <Link
           className="boton-detalle"
