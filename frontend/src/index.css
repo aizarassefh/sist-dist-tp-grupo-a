@@ -846,3 +846,28 @@ select {
 .sin-permiso h2 {
   margin-top: 0;
 }
+/* =========================
+   REGISTRO
+   ========================= */
+
+.login-ayuda {
+  margin: 6px 0 0;
+  color: #77706a;
+  font-size: 12px;
+}
+
+.login-enlace {
+  margin: 15px 0 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+.login-enlace a {
+  color: #80613b;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.login-enlace a:hover {
+  text-decoration: underline;
+}

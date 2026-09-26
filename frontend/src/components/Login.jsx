@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { guardarToken, mensajeDeError, pedir } from '../api/cliente'
 
 function Login({ onLogin }) {
@@ -68,6 +69,10 @@ function Login({ onLogin }) {
       <button type="submit" disabled={loading}>
         {loading ? 'Ingresando...' : 'Iniciar sesión'}
       </button>
+
+      <p className="login-enlace">
+        <Link to="/registro">¿No tenés cuenta? Registrate</Link>
+      </p>
 
     </form>
   </div>

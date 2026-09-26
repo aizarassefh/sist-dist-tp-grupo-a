@@ -13,6 +13,7 @@ import FiltrosObras from './components/FiltrosObras'
 import ReporteAsistencia from './components/ReporteAsistencia'
 import Home from './components/Home'
 import Login from './components/Login'
+import Registro from './components/Registro'
 import RequiereRol from './components/RequiereRol'
 import { borrarToken, EVENTO_SESION_VENCIDA, obtenerToken, pedir } from './api/cliente'
 import { ROLES, esGestor } from './roles'
@@ -481,7 +482,17 @@ function App() {
   if (!token) {
     return (
       <main className="app">
-        <Login onLogin={handleLogin} />
+        <Routes>
+          <Route
+            path="/registro"
+            element={<Registro onLogin={handleLogin} />}
+          />
+
+          <Route
+            path="*"
+            element={<Login onLogin={handleLogin} />}
+          />
+        </Routes>
       </main>
     )
   }
