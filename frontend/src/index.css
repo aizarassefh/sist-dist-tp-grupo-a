@@ -1070,3 +1070,9 @@ select {
   }
 
 }
+
+/* Resultados anteriores atenuados mientras llega la búsqueda nueva. */
+.obras.actualizando {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
