@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package museo.comparacion;
+
+option java_multiple_files = true;
+option java_package = "com.unla.museo.comparacion.grpc";
+option java_outer_classname = "ComparacionProto";
+
+import "catalogo.proto";
+
+// Servicio de Comparación de Obras
+service ComparacionService {
+  // Comparar dos obras específicas
+  rpc CompararObras(CompararObrasRequest) returns (ComparacionObras);
+
+  // Obtener obras similares para comparar
+  rpc ObtenerObrasSimilares(ObtenerObrasSimilaresRequest) returns (ObrasSimilaresResponse);
+
+  // Análisis de estilo entre obras
+  rpc AnalizarEstilo(AnalizarEstiloRequest) returns (AnalisisEstilo);
+}
+
+// Mensajes
+message ComparacionObras {
+  museo.catalogo.Obra obra_principal = 1;
+  museo.catalogo.Obra obra_secundaria = 2;
+
+  // Dimensiones de comparación
+  DimensionComparacion tecnica = 3;
+  DimensionComparacion estilo = 4;
+  DimensionComparacion epoca = 5;
+  DimensionComparacion artista = 6;
+  DimensionComparacion tematica = 7;
+
+  // Puntuación general de similitud (0-100)
+  double indice_similitud = 8;
+
+  // Análisis textual generado
+  string analisis = 9;
+  repeated string diferencias_clave = 10;
+  repeated string similitudes_clave = 11;
+}
+
+message DimensionComparacion {
+  string nombre = 1;
+  string valor_obra_principal = 2;
+  string valor_obra_secundaria = 3;
+  double similitud = 4; // 0-100
+  string observacion = 5;
+}
+
+message AnalisisEstilo {
+  repeated ElementoEstilo elementos = 1;
+  string descripcion_general = 2;
+  repeated string caracteristicas_distinguibles = 3;
+}
+
+message ElementoEstilo {
+  string nombre = 1;
+  string descripcion = 2;
+  repeated string obras_ejemplo = 3;
+}
+
+message ObrasSimilaresResponse {
+  repeated museo.catalogo.Obra obras = 1;
+  string criterio_busqueda = 2; // Estilo, técnica o artista
+}
+
+// Requests y Responses
+message CompararObrasRequest {
+  int64 obra_principal_id = 1;
+  int64 obra_secundaria_id = 2;
+  int64 usuario_id = 3; // Para logging de uso
+}
+
+message ObtenerObrasSimilaresRequest {
+  int64 obra_id = 1;
+  string criterio = 2; // "ESTILO", "TECNICA", "ARTISTA", "EPOCA"
+  int32 cantidad = 3;  // Default 5
+}
+
+message AnalizarEstiloRequest {
+  string estilo = 1;
+  int64 obra_referencia_id = 2; // Opcional
+}

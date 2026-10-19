@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package museo.common;
+
+option java_multiple_files = true;
+option java_package = "com.unla.museo.common.grpc";
+option java_outer_classname = "CommonProto";
+
+// Mensajes comunes reutilizables
+
+message Paginacion {
+  int32 pagina = 1;
+  int32 tamano = 2;
+  int32 total = 3;
+  int32 total_paginas = 4;
+}
+
+message Ordenamiento {
+  string campo = 1;
+  bool descendente = 2;
+}
+
+message Filtro {
+  string campo = 1;
+  string operador = 2; // eq, ne, gt, gte, lt, lte, like, in
+  string valor = 3;
+}
+
+message RespuestaError {
+  int32 codigo = 1;
+  string mensaje = 2;
+  string detalle = 3;
+  repeated string errores_validacion = 4;
+}
+
+message RespuestaExito {
+  bool exito = 1;
+  string mensaje = 2;
+  int64 id_registro = 3;
+}
+
+message RangoFechas {
+  string fecha_inicio = 1; // ISO 8601
+  string fecha_fin = 2;    // ISO 8601
+}
+
+message MetadataRequest {
+  string request_id = 1;
+  string timestamp = 2;
+  string origen = 3; // Servicio que origina la petición
+  string usuario_id = 4;
+  string rol = 5;
+}
+
+message MetadataResponse {
+  string request_id = 1;
+  string timestamp_servicio = 2;
+  int32 tiempo_procesamiento_ms = 3;
+  string servicio_procesador = 4;
+}
+
+// Metadata de paginación para respuestas paginadas
+message InfoPaginada {
+  int32 pagina_actual = 1;
+  int32 elementos_por_pagina = 2;
+  int32 total_elementos = 3;
+  int32 total_paginas = 4;
+  bool tiene_siguiente = 5;
+  bool tiene_anterior = 6;
+}
+
+// Empty message para métodos que no requieren parámetros
+message Empty {
+}
+
+// Mensaje genérico para IDs
+message IdRequest {
+  int64 id = 1;
+}
+
+// Mensaje genérico para respuesta de eliminación
+message DeleteResponse {
+  bool eliminado = 1;
+  string mensaje = 2;
+}
