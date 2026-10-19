@@ -1,8 +1,11 @@
 package com.unla.museo.usuarios.grpc.service;
 
+import com.unla.museo.catalogo.entity.ObraEntity;
+import com.unla.museo.catalogo.repository.ObraRepository;
 import com.unla.museo.seguridad.entity.UsuarioEntity;
 import com.unla.museo.seguridad.repository.UsuarioRepository;
 import com.unla.museo.usuarios.grpc.*;
+import com.unla.museo.usuarios.repository.InteraccionUsuarioRepository;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 
@@ -20,13 +23,16 @@ import java.util.stream.Collectors;
 public class UsuariosGrpcService extends UsuariosServiceGrpc.UsuariosServiceImplBase {
 
     private final UsuarioRepository usuarioRepository;
-    private final com.unla.museo.usuarios.repository.InteraccionUsuarioRepository interaccionRepository;
+    private final InteraccionUsuarioRepository interaccionRepository;
+    private final ObraRepository obraRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     public UsuariosGrpcService(UsuarioRepository usuarioRepository,
-                                 com.unla.museo.usuarios.repository.InteraccionUsuarioRepository interaccionRepository) {
+                                InteraccionUsuarioRepository interaccionRepository,
+                                ObraRepository obraRepository) {
         this.usuarioRepository = usuarioRepository;
+        this.obraRepository = obraRepository;
         this.interaccionRepository = interaccionRepository;
     }
 
@@ -125,8 +131,8 @@ public class UsuariosGrpcService extends UsuariosServiceGrpc.UsuariosServiceImpl
             Optional<com.unla.museo.seguridad.entity.UsuarioEntity> usuarioOpt =
                 usuarioRepository.findById(request.getUsuarioId());
 
-            Optional<com.unla.museo.catalogo.entity.ObraEntity> obraOpt =
-                com.unla.museo.catalogo.repository.ObraRepository
+            Optional<ObraEntity> obraOpt =
+                    obraRepository
                     .findById(request.getObraId());
 
             if (usuarioOpt.isEmpty()) {
@@ -232,7 +238,7 @@ public class UsuariosGrpcService extends UsuariosServiceGrpc.UsuariosServiceImpl
             .setEmail(entity.getEmail())
             .setNombre(entity.getNombre())
             .setApellido(entity.getApellido())
-            .setRol(entity.getRol().getNombre().name());
+            .setRol(entity.getRol().getNombre());
 
         if (entity.getPreferencias() != null) {
             builder.setPreferencias(convertToPreferenciasProto(entity.getPreferencias()));

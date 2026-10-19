@@ -5,6 +5,25 @@ import com.unla.museo.catalogo.entity.ObraEntity;
 import com.unla.museo.catalogo.repository.ArtistaRepository;
 import com.unla.museo.catalogo.repository.ObraRepository;
 import com.unla.museo.exploracion.grpc.*;
+import com.unla.museo.exploracion.grpc.ClusterObras;
+import com.unla.museo.exploracion.grpc.ConexionObra;
+import com.unla.museo.exploracion.grpc.ConexionesObrasResponse;
+import com.unla.museo.exploracion.grpc.CronologiaItem;
+import com.unla.museo.exploracion.grpc.DescubrirObrasRequest;
+import com.unla.museo.exploracion.grpc.DescubrirObrasResponse;
+import com.unla.museo.exploracion.grpc.EspacioArte;
+import com.unla.museo.exploracion.grpc.EstadisticasCatalogo;
+import com.unla.museo.exploracion.grpc.EstiloCount;
+import com.unla.museo.exploracion.grpc.ExploracionServiceGrpc;
+import com.unla.museo.exploracion.grpc.ExplorarCronologiaRequest;
+import com.unla.museo.exploracion.grpc.ExplorarCronologiaResponse;
+import com.unla.museo.exploracion.grpc.ExplorarEspacioRequest;
+import com.unla.museo.exploracion.grpc.ExplorarEspacioResponse;
+import com.unla.museo.exploracion.grpc.FiltroDinamico;
+import com.unla.museo.exploracion.grpc.ObtenerConexionesRequest;
+import com.unla.museo.exploracion.grpc.ObtenerEstadisticasRequest;
+import com.unla.museo.exploracion.grpc.RangoAnios;
+import com.unla.museo.exploracion.grpc.TecnicaCount;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 
@@ -134,7 +153,7 @@ public class ExploracionCatalogoGrpcService extends ExploracionServiceGrpc.Explo
 
     @Override
     public void descubrirObras(DescubrirObrasRequest request,
-                              StreamObserver<DescubrirObrasResponse> responseObserver) {
+                               StreamObserver<DescubrirObrasResponse> responseObserver) {
         List<ObraEntity> obras = obraRepository.findAll();
 
         // Aplicar filtros dinámicos
@@ -180,7 +199,7 @@ public class ExploracionCatalogoGrpcService extends ExploracionServiceGrpc.Explo
 
     @Override
     public void explorarCronologia(ExplorarCronologiaRequest request,
-                                  StreamObserver<ExplorarCronologiaResponse> responseObserver) {
+                                   StreamObserver<ExplorarCronologiaResponse> responseObserver) {
         int anioInicio = request.getAnioInicio() > 0 ? request.getAnioInicio() : 1500;
         int anioFin = request.getAnioFin() > 0 ? request.getAnioFin() : 2000;
 
@@ -329,7 +348,7 @@ public class ExploracionCatalogoGrpcService extends ExploracionServiceGrpc.Explo
 
     @Override
     public void obtenerEstadisticas(ObtenerEstadisticasRequest request,
-                                   StreamObserver<EstadisticasCatalogo> responseObserver) {
+                                    StreamObserver<EstadisticasCatalogo> responseObserver) {
         List<ObraEntity> todasLasObras = obraRepository.findAll();
         List<ObraEntity> obras = todasLasObras;
 
@@ -345,11 +364,12 @@ public class ExploracionCatalogoGrpcService extends ExploracionServiceGrpc.Explo
             .filter(o -> o.getEstilo() != null)
             .collect(Collectors.groupingBy(ObraEntity::getEstilo, Collectors.counting()));
 
+        List<ObraEntity> finalObras = obras;
         List<EstiloCount> estilosCount = estilos.entrySet().stream()
             .map(e -> EstiloCount.newBuilder()
                 .setEstilo(e.getKey())
                 .setCantidad(e.getValue().intValue())
-                .setPorcentaje((e.getValue() * 100.0) / obras.size())
+                .setPorcentaje((e.getValue() * 100.0) / finalObras.size())
                 .build())
             .sorted(Comparator.comparing(EstiloCount::getCantidad).reversed())
             .collect(Collectors.toList());

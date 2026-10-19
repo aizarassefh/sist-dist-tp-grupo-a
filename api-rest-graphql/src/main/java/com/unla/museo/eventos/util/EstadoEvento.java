@@ -7,5 +7,6 @@ package com.unla.museo.eventos.util;
 public enum EstadoEvento {
     PASADOS,
     FUTUROS,
-    TODOS
+    TODOS,
+    PLANIFICADO
 }

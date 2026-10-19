@@ -5,13 +5,13 @@ import com.unla.museo.eventos.entity.InscripcionEntity;
 import com.unla.museo.eventos.grpc.*;
 import com.unla.museo.eventos.repository.EventoRepository;
 import com.unla.museo.eventos.repository.InscripcionRepository;
+import com.unla.museo.eventos.util.EstadoEvento;
 import com.unla.museo.eventos.util.TipoEvento;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -137,7 +137,7 @@ public class EventosGrpcService extends EventosServiceGrpc.EventosServiceImplBas
 
     @Override
     public void actualizarEvento(ActualizarEventoRequest request,
-                               StreamObserver<Evento> responseObserver) {
+                                 StreamObserver<Evento> responseObserver) {
         Optional<EventoEntity> eventoOpt = eventoRepository.findById(request.getId());
 
         if (eventoOpt.isEmpty()) {
@@ -207,7 +207,10 @@ public class EventosGrpcService extends EventosServiceGrpc.EventosServiceImplBas
         // Crear inscripción
         InscripcionEntity inscripcion = new InscripcionEntity();
         inscripcion.setEvento(evento);
+        inscripcion.setUsuario(null); // TODO: obtener usuario autenticado
         inscripcion.setFechaInscripcion(LocalDateTime.now());
+        inscripcion.setEstado(InscripcionEntity.EstadoInscripcion.INSCRIPTO);
+        inscripcion.setAsistencia(false);
 
         InscripcionEntity guardada = inscripcionRepository.save(inscripcion);
 
@@ -237,8 +240,9 @@ public class EventosGrpcService extends EventosServiceGrpc.EventosServiceImplBas
 
         InscripcionEntity inscripcion = inscripcionOpt.get();
 
-        // Eliminar la inscripción (simulando cancelación)
-        inscripcionRepository.delete(inscripcion);
+        // Marcar como cancelada
+        inscripcion.setEstado(InscripcionEntity.EstadoInscripcion.CANCELADO);
+        inscripcionRepository.save(inscripcion);
 
         // Actualizar contador del evento
         EventoEntity evento = inscripcion.getEvento();
@@ -281,7 +285,7 @@ public class EventosGrpcService extends EventosServiceGrpc.EventosServiceImplBas
 
     @Override
     public void generarReporteAsistencia(ReporteRequest request,
-                                        StreamObserver<ReporteAsistencia> responseObserver) {
+                                         StreamObserver<ReporteAsistencia> responseObserver) {
         Optional<EventoEntity> eventoOpt = eventoRepository.findById(request.getEventoId());
 
         if (eventoOpt.isEmpty()) {
@@ -294,10 +298,15 @@ public class EventosGrpcService extends EventosServiceGrpc.EventosServiceImplBas
         }
 
         EventoEntity evento = eventoOpt.get();
-        long totalInscritos = inscripcionRepository.countByEventoId(evento.getId());
+        List<InscripcionEntity> inscripciones = inscripcionRepository.findByEventoIdOrderByFechaInscripcionAsc(evento.getId());
+        long totalInscritos = inscripciones.size();
 
-        int totalAsistentes = 0; // No hay seguimiento de asistencia actual
-        double tasaAsistencia = 0.0;
+        int totalAsistentes = (int) inscripciones.stream()
+            .filter(i -> i.getEstado() == InscripcionEntity.EstadoInscripcion.ASISTIO)
+            .count();
+        double tasaAsistencia = totalInscritos > 0
+            ? (totalAsistentes * 100.0) / totalInscritos
+            : 0.0;
 
         ReporteAsistencia response = ReporteAsistencia.newBuilder()
             .setEventoId(evento.getId())
@@ -321,7 +330,7 @@ public class EventosGrpcService extends EventosServiceGrpc.EventosServiceImplBas
             .setTipo(entity.getTipo() != null ? entity.getTipo().name() : "")
             .setUbicacion(entity.getUbicacion() != null ? entity.getUbicacion() : "")
             .setCapacidadMaxima(entity.getCapacidadMaxima())
-            .setActivoo(entity.isActivo());
+            .setActivo(entity.isActivo());
 
         if (entity.getFechaInicio() != null) {
             builder.setFechaInicio(entity.getFechaInicio().format(DATE_FORMATTER));
@@ -339,8 +348,8 @@ public class EventosGrpcService extends EventosServiceGrpc.EventosServiceImplBas
     private Inscripcion convertToInscripcionProto(InscripcionEntity entity) {
         Inscripcion.Builder builder = Inscripcion.newBuilder()
             .setId(entity.getId())
-            .setEstado("INSCRIPTO") // Estado por defecto
-            .setAsistencia(false); // La entidad no tiene campo de asistencia
+            .setEstado(entity.getEstado() != null ? entity.getEstado().name() : "INSCRIPTO")
+            .setAsistencia(entity.isAsistencia());
 
         if (entity.getEvento() != null) {
             builder.setEventoId(entity.getEvento().getId());

@@ -3,6 +3,8 @@ package com.unla.museo.seguridad.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 
 @Entity
 @Data
@@ -59,5 +61,17 @@ public class UsuarioEntity extends AuditoriaEntity {
 
     public void setHistorialVisitas(java.util.List<com.unla.museo.usuarios.entity.InteraccionUsuario> historialVisitas) {
         this.historialVisitas = historialVisitas;
+    }
+
+    /**
+     * Alias para creacion (usado por proto)
+     * Heredado de AuditoriaEntity
+     */
+    public LocalDateTime getFechaRegistro() {
+        return getCreacion();
+    }
+
+    public void setFechaRegistro(LocalDateTime fechaRegistro) {
+        setCreacion(fechaRegistro);
     }
 }
