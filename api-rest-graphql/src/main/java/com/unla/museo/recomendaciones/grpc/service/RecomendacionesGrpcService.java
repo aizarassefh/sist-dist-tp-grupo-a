@@ -2,6 +2,7 @@ package com.unla.museo.recomendaciones.grpc.service;
 
 import com.unla.museo.catalogo.entity.ObraEntity;
 import com.unla.museo.catalogo.repository.ObraRepository;
+import com.unla.museo.recomendaciones.dto.ObtenerRecomendacionesRequest;
 import com.unla.museo.recomendaciones.grpc.*;
 import com.unla.museo.recomendaciones.grpc.RecomendacionesServiceGrpc;
 import com.unla.museo.seguridad.entity.UsuarioEntity;
@@ -37,7 +38,9 @@ public class RecomendacionesGrpcService extends RecomendacionesServiceGrpc.Recom
     public void obtenerRecomendaciones(ObtenerRecomendacionesRequest request,
                                        StreamObserver<RecomendacionesResponse> responseObserver) {
         int cantidad = request.getCantidad() > 0 ? request.getCantidad() : 10;
-        Set<Long> excluirIds = new HashSet<>(request.getExcluirObrasIdsList());
+        Set<Long> excluirIds = request.getExcluirObrasIdsList().stream()
+        .map(Long::valueOf)
+        .collect(Collectors.toSet());
 
         Optional<UsuarioEntity> usuarioOpt = usuarioRepository.findById(request.getUsuarioId());
 
