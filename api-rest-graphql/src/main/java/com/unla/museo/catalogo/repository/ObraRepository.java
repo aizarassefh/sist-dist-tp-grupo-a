@@ -63,6 +63,27 @@ public interface ObraRepository extends JpaRepository<ObraEntity, Long> {
            "WHERE o.id = :obraId")
     void actualizarCalificacion(@Param("obraId") Long obraId, @Param("nuevaCalificacion") double nuevaCalificacion);
 
+    
+@Query("""
+        select o from ObraEntity o
+        where (:palabraClave is null
+               or lower(o.titulo) like concat('%', :palabraClave, '%')
+               or lower(o.descripcion) like concat('%', :palabraClave, '%')
+               or lower(o.artista.nombre) like concat('%', :palabraClave, '%'))
+          and (:epoca is null or lower(o.epoca) like concat('%', :epoca, '%'))
+          and (:tecnica is null or lower(o.tecnica) like concat('%', :tecnica, '%'))
+          and (:ubicacion is null or lower(o.ubicacion) like concat('%', :ubicacion, '%'))
+          and (:enExhibicion is null or o.enExhibicion = :enExhibicion)
+        """)
+Page<ObraEntity> buscar(
+        @Param("palabraClave") String palabraClave,
+        @Param("epoca") String epoca,
+        @Param("tecnica") String tecnica,
+        @Param("ubicacion") String ubicacion,
+        @Param("enExhibicion") Boolean enExhibicion,
+        Pageable pageable);
+
+
     /**
      * Buscar obras mejor calificadas
      */
