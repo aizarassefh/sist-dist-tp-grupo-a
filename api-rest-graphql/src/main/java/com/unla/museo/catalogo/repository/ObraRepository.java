@@ -99,5 +99,5 @@ Page<ObraEntity> buscar(
     /**
      * Buscar obras por rango de años
      */
-    List<ObraEntity> findByAnioBetween(int anioInicio, int anioFin);
+    List<ObraEntity> findByAnioCreacionBetween(int anioInicio, int anioFin);
 }

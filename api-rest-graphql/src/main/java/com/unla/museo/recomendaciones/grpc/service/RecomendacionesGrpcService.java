@@ -2,7 +2,6 @@ package com.unla.museo.recomendaciones.grpc.service;
 
 import com.unla.museo.catalogo.entity.ObraEntity;
 import com.unla.museo.catalogo.repository.ObraRepository;
-import com.unla.museo.recomendaciones.dto.ObtenerRecomendacionesRequest;
 import com.unla.museo.recomendaciones.grpc.*;
 import com.unla.museo.recomendaciones.grpc.RecomendacionesServiceGrpc;
 import com.unla.museo.seguridad.entity.UsuarioEntity;

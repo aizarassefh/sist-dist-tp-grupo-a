@@ -1,0 +1,9 @@
+type Query {
+  obras(filtro: FiltroObras, pagina: Int, tamanio: Int): [Obra!]!
+  obra(id: ID!): Obra
+}
+
+type Obra { id: ID! titulo: String! artista: Artista! imagenUrl: String anioCreacion: Int tecnica: String dimensiones: String epoca: String descripcion: String ubicacion: String enExhibicion: Boolean! comentarios: [Comentario!]! }
+type Artista { nombre: String! biografia: String }
+type Comentario { usuario: String! texto: String! fecha: String! }
+input FiltroObras { palabraClave: String epoca: String tecnica: String ubicacion: String enExhibicion: Boolean }

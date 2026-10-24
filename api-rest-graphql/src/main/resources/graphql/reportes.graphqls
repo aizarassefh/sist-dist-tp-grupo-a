@@ -1,0 +1,11 @@
+extend type Query {
+  reporteAsistencia(filtro: FiltroReporte): ReporteAsistencia
+}
+
+input FiltroReporte { desde: String hasta: String tipo: TipoEvento estado: EstadoEvento agruparPor: AgruparPor }
+enum TipoEvento { VISITA_GUIADA TALLER CHARLA }
+enum EstadoEvento { PASADOS FUTUROS TODOS }
+enum AgruparPor { MES TIPO MES_Y_TIPO }
+type ReporteAsistencia { fechaCorte: String! grupos: [GrupoReporte!]! }
+type GrupoReporte { mes: String tipo: TipoEvento cantidadDeEventos: Int! totalInscriptosAcumulados: Int! promedioDeAsistencia: Float! eventosMasPopulares: [EventoPopular!]! }
+type EventoPopular { id: ID! titulo: String! cantidadInscriptos: Int! }
