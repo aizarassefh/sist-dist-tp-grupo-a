@@ -7,6 +7,7 @@ import com.unla.museo.catalogo.repository.ObraRepository;
 import com.unla.museo.recorridos.grpc.*;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -17,7 +18,10 @@ import java.util.stream.Collectors;
  * Servicio gRPC para Recorridos Guiados Personalizados.
  * Genera recorridos temáticos optimizados basados en diferentes criterios.
  */
+// gRPC atiende fuera de un request web: sin transacción abierta, leer una
+// relación LAZY (obra.getArtista()) tira LazyInitializationException.
 @GrpcService
+@Transactional(readOnly = true)
 public class RecorridosGuidadosGrpcService extends RecorridosServiceGrpc.RecorridosServiceImplBase {
 
     private final ObraRepository obraRepository;

@@ -9,6 +9,7 @@ import com.unla.museo.seguridad.repository.UsuarioRepository;
 import com.unla.museo.usuarios.grpc.PreferenciasUsuario;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,7 +20,10 @@ import java.util.stream.Collectors;
  * Servicio gRPC para Recomendaciones Personalizadas.
  * Genera sugerencias basadas en preferencias, historial y tendencias.
  */
+// gRPC atiende fuera de un request web: sin transacción abierta, leer una
+// relación LAZY (obra.getArtista()) tira LazyInitializationException.
 @GrpcService
+@Transactional(readOnly = true)
 public class RecomendacionesGrpcService extends RecomendacionesServiceGrpc.RecomendacionesServiceImplBase {
 
     private final ObraRepository obraRepository;

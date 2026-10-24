@@ -10,6 +10,7 @@ import com.unla.museo.catalogo.repository.ComentarioRepository;
 import com.unla.museo.catalogo.repository.ObraRepository;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,7 +23,10 @@ import java.util.stream.Collectors;
  * Servicio gRPC para el Catálogo de Obras y Artistas.
  * Expone operaciones CRUD y búsquedas sobre el catálogo del museo.
  */
+// gRPC atiende fuera de un request web: sin transacción abierta, leer una
+// relación LAZY (obra.getArtista()) tira LazyInitializationException.
 @GrpcService
+@Transactional(readOnly = true)
 public class CatalogoGrpcService extends CatalogoServiceGrpc.CatalogoServiceImplBase {
 
     private final ObraRepository obraRepository;
@@ -235,6 +239,7 @@ public class CatalogoGrpcService extends CatalogoServiceGrpc.CatalogoServiceImpl
     }
 
     @Override
+    @Transactional
     public void crearComentario(CrearComentarioRequest request,
                                 StreamObserver<Comentario> responseObserver) {
         ComentarioEntity comentario = new ComentarioEntity();

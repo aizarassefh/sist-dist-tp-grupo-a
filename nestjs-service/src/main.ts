@@ -6,6 +6,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   // Puerto del servidor gRPC
   const grpcPort = process.env.GRPC_PORT || 9091;
+  // Los .proto viven en la raíz del repo, compartidos con los servicios Java;
+  // desde dist/ son dos niveles arriba. PROTO_DIR permite otra ubicación (Docker).
+  const dirProto = process.env.PROTO_DIR || join(__dirname, '../../proto');
 
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
     transport: Transport.GRPC,
@@ -17,10 +20,10 @@ async function bootstrap() {
         'museo.catalogo'
       ],
       protoPath: [
-        join(__dirname, '../proto/recomendaciones.proto'),
-        join(__dirname, '../proto/usuarios.proto'),
-        join(__dirname, '../proto/common.proto'),
-        join(__dirname, '../proto/catalogo.proto'),
+        join(dirProto, 'recomendaciones.proto'),
+        join(dirProto, 'usuarios.proto'),
+        join(dirProto, 'common.proto'),
+        join(dirProto, 'catalogo.proto'),
       ],
       url: `0.0.0.0:${grpcPort}`,
       loader: {

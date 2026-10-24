@@ -51,6 +51,13 @@
             <artifactId>grpc-netty-shaded</artifactId>
             <version>${grpc.version}</version>
         </dependency>
+        <!-- Spring Cloud Gateway carga GrpcSslConfigurer, que usa la clase sin
+             sombrear io.grpc.netty.NettyChannelBuilder: sin esto el gateway no arranca. -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>

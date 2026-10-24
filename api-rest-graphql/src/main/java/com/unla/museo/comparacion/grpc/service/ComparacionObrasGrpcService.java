@@ -6,6 +6,7 @@ import com.unla.museo.comparacion.grpc.*;
 import com.unla.museo.comparacion.grpc.ComparacionServiceGrpc;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -14,7 +15,10 @@ import java.util.stream.Collectors;
  * Servicio gRPC para Comparación de Obras.
  * Permite comparar obras lado a lado y encontrar similitudes/diferencias.
  */
+// gRPC atiende fuera de un request web: sin transacción abierta, leer una
+// relación LAZY (obra.getArtista()) tira LazyInitializationException.
 @GrpcService
+@Transactional(readOnly = true)
 public class ComparacionObrasGrpcService extends ComparacionServiceGrpc.ComparacionServiceImplBase {
 
     private final ObraRepository obraRepository;

@@ -68,6 +68,21 @@ public class ObraEntity {
     @Column(name = "TOTAL_VALORACIONES")
     private Integer totalValoraciones = 0;
 
+    // Estas tres columnas se agregaron con ddl-auto=update: en una base que ya
+    // tenía obras quedan en NULL, y el valor inicial de arriba solo aplica a
+    // las obras nuevas. Sin esto, cualquier unboxing tira NullPointerException.
+    public Integer getVisitas() {
+        return visitas != null ? visitas : 0;
+    }
+
+    public Double getCalificacionPromedio() {
+        return calificacionPromedio != null ? calificacionPromedio : 0.0;
+    }
+
+    public Integer getTotalValoraciones() {
+        return totalValoraciones != null ? totalValoraciones : 0;
+    }
+
     /**
      * Agrega una nueva valoración y recalcula el promedio
      */

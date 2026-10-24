@@ -26,6 +26,7 @@ import com.unla.museo.exploracion.grpc.RangoAnios;
 import com.unla.museo.exploracion.grpc.TecnicaCount;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,7 +35,10 @@ import java.util.stream.Collectors;
  * Servicio gRPC para Exploración Interactiva del Catálogo.
  * Proporciona funcionalidades avanzadas de exploración visual y filtrado.
  */
+// gRPC atiende fuera de un request web: sin transacción abierta, leer una
+// relación LAZY (obra.getArtista()) tira LazyInitializationException.
 @GrpcService
+@Transactional(readOnly = true)
 public class ExploracionCatalogoGrpcService extends ExploracionServiceGrpc.ExploracionServiceImplBase {
 
     private final ObraRepository obraRepository;
