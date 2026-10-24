@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package museo.recomendaciones;
+
+option java_multiple_files = true;
+option java_package = "com.unla.museo.recomendaciones.grpc";
+option java_outer_classname = "RecomendacionesProto";
+
+import "catalogo.proto";
+import "usuarios.proto";
+
+// Servicio de Recomendaciones Personalizadas
+service RecomendacionesService {
+  // Recomendaciones basadas en historial y preferencias
+  rpc ObtenerRecomendaciones(ObtenerRecomendacionesRequest) returns (RecomendacionesResponse);
+
+  // Recomendaciones por visitas similares (colaborativo)
+  rpc ObtenerRecomendacionesColaborativas(ObtenerRecomendacionesColaborativasRequest) returns (RecomendacionesResponse);
+
+  // Tendencias y populares
+  rpc ObtenerObrasPopulares(ObtenerObrasPopularesRequest) returns (ObrasPopularesResponse);
+  rpc ObtenerObrasTendencia(ObtenerObrasTendenciaRequest) returns (ObrasTendenciaResponse);
+
+  // Sugerencias basadas en obra actual (para "Siguiente obra recomendada")
+  rpc ObtenerSugerenciasContextuales(ObtenerSugerenciasContextualesRequest) returns (RecomendacionesResponse);
+}
+
+// Mensajes
+message Recomendacion {
+  museo.catalogo.Obra obra = 1;
+  double score = 2; // Score de recomendación (0-100)
+  string razon = 3; // "Porque visitaste...", "Usuarios similares vieron...", "Popular en X estilo"
+  string tipo_recomendacion = 4; // PERSONAL, COLABORATIVA, POPULAR, TENDENCIA
+}
+
+message RecomendacionesResponse {
+  repeated Recomendacion recomendaciones = 1;
+  museo.usuarios.PreferenciasUsuario preferencias_usadas = 2;
+  int32 total_disponibles = 3;
+}
+
+message ObrasPopularesResponse {
+  repeated ObraPopular obras = 1;
+  string periodo = 2; // "semana", "mes", "año"
+}
+
+message ObraPopular {
+  museo.catalogo.Obra obra = 1;
+  int32 visitas = 2;
+  double calificacion_promedio = 3;
+  int32 posicion_ranking = 4;
+}
+
+message ObrasTendenciaResponse {
+  repeated ObraTendencia obras = 1;
+  string tendencia_calculada = 2; // El tipo de tendencia detectada
+}
+
+message ObraTendencia {
+  museo.catalogo.Obra obra = 1;
+  double variacion_visitas = 2; // % de aumento vs periodo anterior
+  int32 nuevos_comentarios = 3;
+  double score_tendencia = 4; // Score compuesto
+}
+
+// Requests y Responses
+message ObtenerRecomendacionesRequest {
+  int64 usuario_id = 1;
+  int32 cantidad = 2; // Default 10
+  repeated string excluir_obras_ids = 3; // IDs de obras ya vistas o rechazadas
+  string contexto = 4; // "INICIO", "COLECCION", "DETALLE_OBRA"
+}
+
+message ObtenerRecomendacionesColaborativasRequest {
+  int64 usuario_id = 1;
+  int32 cantidad = 2;
+  int32 usuarios_similares = 3; // Cantidad de usuarios similares a considerar
+}
+
+message ObtenerObrasPopularesRequest {
+  string periodo = 1; // "semana", "mes", "año"
+  int32 cantidad = 2;
+  string filtro_estilo = 3; // Opcional
+}
+
+message ObtenerObrasTendenciaRequest {
+  int32 cantidad = 1;
+  string periodo_comparacion = 2; // "semana", "mes"
+}
+
+message ObtenerSugerenciasContextualesRequest {
+  int64 usuario_id = 1;
+  int64 obra_actual_id = 2; // Obra que está viendo actualmente
+  int32 cantidad = 3;
+  string tipo_sugerencia = 4; // "SIGUIENTE_OBRA", "MISMO_ESTILO", "MISMO_ARTISTA", "COMPLETAR_VISITA"
+}

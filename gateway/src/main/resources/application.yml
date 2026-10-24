@@ -1,0 +1,130 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: museo-gateway
+  main:
+    web-application-type: reactive
+  codec:
+    max-in-memory-size: 10MB
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+# gRPC Channels Configuration
+grpc:
+  client:
+    # Servidor Spring Boot Hito 1 + gRPC
+    spring-boot-service:
+      address: static://host.docker.internal:9090
+      negotiation-type: plaintext
+      default-load-balancing-policy: round_robin
+
+    # Servicio NestJS Recomendaciones
+    nestjs-service:
+      address: static://host.docker.internal:9091
+      negotiation-type: plaintext
+
+# Routes Configuration para Gateway
+spring.cloud.gateway.routes:
+  # ================================================
+  # RUTAS DEL HITO 2 (Nuevas funcionalidades gRPC)
+  # ================================================
+  - id: recorridos-route
+    uri: lb://no-load-balancer
+    predicates:
+      - Path=/api/v2/recorridos/**
+    filters:
+      - StripPrefix=1
+
+  - id: comparacion-route
+    uri: lb://no-load-balancer
+    predicates:
+      - Path=/api/v2/comparar/**
+    filters:
+      - StripPrefix=1
+
+  - id: recomendaciones-route
+    uri: lb://no-load-balancer
+    predicates:
+      - Path=/api/v2/recomendaciones/**
+    filters:
+      - StripPrefix=1
+
+  - id: exploracion-route
+    uri: lb://no-load-balancer
+    predicates:
+      - Path=/api/v2/explorar/**
+    filters:
+      - StripPrefix=1
+
+  - id: hito2-dashboard-route
+    uri: lb://no-load-balancer
+    predicates:
+      - Path=/api/v2/dashboard/**
+    filters:
+      - StripPrefix=1
+
+  # ================================================
+  # RUTAS (Backend Spring Boot REST / GRAPHQL)
+  # ================================================
+  - id: spring-boot-api
+    uri: http://${SPRING_BOOT_HOST:host.docker.internal}:${SPRING_BOOT_PORT:8000}
+    predicates:
+      - Path=/api/**
+    filters:
+      - StripPrefix=0
+
+  - id: graphql-route
+    uri: http://${SPRING_BOOT_HOST:host.docker.internal}:${SPRING_BOOT_PORT:8000}
+    predicates:
+      - Path=/graphql/**
+    filters:
+      - StripPrefix=0
+
+  - id: graphiql-route
+    uri: http://${SPRING_BOOT_HOST:host.docker.internal}:${SPRING_BOOT_PORT:8000}
+    predicates:
+      - Path=/graphiql/**
+    filters:
+      - StripPrefix=0
+
+  - id: swagger-route
+    uri: http://${SPRING_BOOT_HOST:host.docker.internal}:${SPRING_BOOT_PORT:8000}
+    predicates:
+      - Path=/swagger-ui.html,/v3/api-docs/**,/swagger-ui/**
+    filters:
+      - StripPrefix=0
+
+# CORS Configuration
+spring.cloud.gateway.globalcors:
+  cors-configurations:
+    '[/**]':
+      allowed-origins:
+        - "http://localhost:5173"
+        - "http://localhost:3000"
+        - "${FRONTEND_URL:http://localhost:5173}"
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowed-headers:
+        - "*"
+      allow-credentials: true
+      max-age: 3600
+
+# Logging
+logging:
+  level:
+    com.unla.museo.gateway: DEBUG
+    org.springframework.cloud.gateway: INFO
+    io.grpc: INFO

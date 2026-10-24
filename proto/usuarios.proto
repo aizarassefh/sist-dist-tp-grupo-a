@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package museo.usuarios;
+
+option java_multiple_files = true;
+option java_package = "com.unla.museo.usuarios.grpc";
+option java_outer_classname = "UsuariosProto";
+
+// Servicio de Usuarios y Preferencias
+service UsuariosService {
+  // Gestión de usuarios
+  rpc ObtenerUsuario(ObtenerUsuarioRequest) returns (Usuario);
+  rpc ActualizarPreferencias(ActualizarPreferenciasRequest) returns (Usuario);
+
+  // Preferencias y gustos
+  rpc ObtenerPreferencias(ObtenerPreferenciasRequest) returns (PreferenciasUsuario);
+  rpc RegistrarInteraccion(RegistrarInteraccionRequest) returns (InteraccionResponse);
+
+  // Historial del usuario
+  rpc ObtenerHistorialVisitas(ObtenerHistorialRequest) returns (HistorialVisitasResponse);
+  rpc ObtenerObrasFavoritas(ObtenerObrasFavoritasRequest) returns (ObrasFavoritasResponse);
+}
+
+// Mensajes
+message Usuario {
+  int64 id = 1;
+  string email = 2;
+  string nombre = 3;
+  string apellido = 4;
+  string rol = 5;
+  PreferenciasUsuario preferencias = 6;
+  string fecha_registro = 7;
+}
+
+message PreferenciasUsuario {
+  repeated string estilos_favoritos = 1;
+  repeated string tecnicas_favoritas = 2;
+  repeated int64 artistas_favoritos = 3;
+  repeated string temas_interes = 4;
+  double umbral_calificacion = 5; // Calificación mínima que valora el usuario
+}
+
+message InteraccionUsuario {
+  int64 id = 1;
+  int64 usuario_id = 2;
+  int64 obra_id = 3;
+  string tipo_interaccion = 4; // VISITA, FAVORITO, VALORACION, COMPARTIR
+  int32 duracion_segundos = 5;
+  string fecha = 6;
+}
+
+// Requests y Responses
+message ObtenerUsuarioRequest {
+  int64 id = 1;
+  string email = 2;
+}
+
+message ActualizarPreferenciasRequest {
+  int64 usuario_id = 1;
+  repeated string estilos_favoritos = 2;
+  repeated string tecnicas_favoritas = 3;
+  repeated int64 artistas_favoritos = 4;
+  repeated string temas_interes = 5;
+}
+
+message ObtenerPreferenciasRequest {
+  int64 usuario_id = 1;
+}
+
+message RegistrarInteraccionRequest {
+  int64 usuario_id = 1;
+  int64 obra_id = 2;
+  string tipo_interaccion = 3;
+  int32 duracion_segundos = 4;
+}
+
+message InteraccionResponse {
+  bool exito = 1;
+  string mensaje = 2;
+}
+
+message ObtenerHistorialRequest {
+  int64 usuario_id = 1;
+  int32 dias_atras = 2;
+}
+
+message HistorialVisitasResponse {
+  repeated InteraccionUsuario interacciones = 1;
+  int32 total = 2;
+}
+
+message ObtenerObrasFavoritasRequest {
+  int64 usuario_id = 1;
+}
+
+message ObrasFavoritasResponse {
+  repeated int64 obra_ids = 1;
+}

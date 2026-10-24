@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package museo.catalogo;
+
+option java_multiple_files = true;
+option java_package = "com.unla.museo.catalogo.grpc";
+option java_outer_classname = "CatalogoProto";
+
+// Servicio de Catálogo de Obras y Artistas
+service CatalogoService {
+  // Búsqueda y listado de obras
+  rpc ListarObras(ListarObrasRequest) returns (ListarObrasResponse);
+  rpc ObtenerObra(ObtenerObraRequest) returns (Obra);
+  rpc BuscarObras(BuscarObrasRequest) returns (BuscarObrasResponse);
+
+  // Gestión de artistas
+  rpc ListarArtistas(ListarArtistasRequest) returns (ListarArtistasResponse);
+  rpc ObtenerArtista(ObtenerArtistaRequest) returns (Artista);
+
+  // Comentarios
+  rpc ListarComentarios(ListarComentariosRequest) returns (ListarComentariosResponse);
+  rpc CrearComentario(CrearComentarioRequest) returns (Comentario);
+}
+
+// Mensajes para Obras
+message Obra {
+  int64 id = 1;
+  string titulo = 2;
+  string descripcion = 3;
+  string tecnica = 4;
+  string estilo = 5;
+  string imagen_url = 6;
+  int32 anio = 7;
+  Artista artista = 8;
+  int32 visitas = 9;
+  double calificacion_promedio = 10;
+}
+
+message Artista {
+  int64 id = 1;
+  string nombre = 2;
+  string nacionalidad = 3;
+  string biografia = 4;
+  string imagen_url = 5;
+}
+
+message Comentario {
+  int64 id = 1;
+  int64 obra_id = 2;
+  int64 usuario_id = 3;
+  string contenido = 4;
+  int32 calificacion = 5;
+  string fecha = 6;
+}
+
+// Requests y Responses
+message ListarObrasRequest {
+  int32 pagina = 1;
+  int32 tamano = 2;
+  string ordenar_por = 3;
+  string orden = 4; // ASC o DESC
+}
+
+message ListarObrasResponse {
+  repeated Obra obras = 1;
+  int32 total = 2;
+  int32 pagina = 3;
+  int32 total_paginas = 4;
+}
+
+message ObtenerObraRequest {
+  int64 id = 1;
+}
+
+message BuscarObrasRequest {
+  string consulta = 1;
+  string tecnica = 2;
+  string estilo = 3;
+  int64 artista_id = 4;
+  int32 pagina = 5;
+  int32 tamano = 6;
+}
+
+message BuscarObrasResponse {
+  repeated Obra obras = 1;
+  int32 total = 2;
+}
+
+message ListarArtistasRequest {
+  int32 pagina = 1;
+  int32 tamano = 2;
+}
+
+message ListarArtistasResponse {
+  repeated Artista artistas = 1;
+  int32 total = 2;
+}
+
+message ObtenerArtistaRequest {
+  int64 id = 1;
+}
+
+message ListarComentariosRequest {
+  int64 obra_id = 1;
+  int32 pagina = 2;
+  int32 tamano = 3;
+}
+
+message ListarComentariosResponse {
+  repeated Comentario comentarios = 1;
+  int32 total = 2;
+}
+
+message CrearComentarioRequest {
+  int64 obra_id = 1;
+  int64 usuario_id = 2;
+  string contenido = 3;
+  int32 calificacion = 4;
+}
