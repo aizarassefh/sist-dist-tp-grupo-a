@@ -29,37 +29,4 @@ public class InscripcionEntity {
 
     @Column(name = "FECHA_INSCRIPCION", nullable = false)
     private LocalDateTime fechaInscripcion;
-
-    @Column(name = "ESTADO", length = 50)
-    @Enumerated(EnumType.STRING)
-    private EstadoInscripcion estado = EstadoInscripcion.INSCRIPTO;
-
-    @Column(name = "ASISTENCIA")
-    private Boolean asistencia = false;
-
-    /**
-     * Estados posibles de una inscripción
-     */
-    public enum EstadoInscripcion {
-        INSCRIPTO,
-        CANCELADO,
-        ASISTIO,
-        NO_PRESENTADO
-    }
-
-    public EstadoInscripcion getEstado() {
-        return estado != null ? estado : EstadoInscripcion.INSCRIPTO;
-    }
-
-    public void setEstado(EstadoInscripcion estado) {
-        this.estado = estado;
-    }
-
-    public boolean isAsistencia() {
-        return asistencia != null ? asistencia : false;
-    }
-
-    public void setAsistencia(Boolean asistencia) {
-        this.asistencia = asistencia;
-    }
 }

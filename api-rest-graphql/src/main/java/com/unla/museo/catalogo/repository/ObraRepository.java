@@ -2,7 +2,6 @@ package com.unla.museo.catalogo.repository;
 
 import com.unla.museo.catalogo.entity.ObraEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -10,62 +9,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ObraRepository extends JpaRepository<ObraEntity, Long> {
 
-    /**
-     * Buscar obras por estilo (contiene ignorando mayúsculas)
-     */
-    List<ObraEntity> findByEstiloContainingIgnoreCase(String estilo);
-
-    /**
-     * Buscar obras por técnica (contiene ignorando mayúsculas)
-     */
-    List<ObraEntity> findByTecnicaContainingIgnoreCase(String tecnica);
-
-    /**
-     * Buscar obras por ID de artista
-     */
-    List<ObraEntity> findByArtistaId(Long artistaId);
-
-    /**
-     * Buscar obras por época
-     */
-    List<ObraEntity> findByEpoca(String epoca);
-
-    /**
-     * Buscar obras por ubicación
-     */
-    List<ObraEntity> findByUbicacion(String ubicacion);
-
-    /**
-     * Buscar obras que están actualmente en exhibición
-     */
-    List<ObraEntity> findByEnExhibicionTrue();
-
-    /**
-     * Buscar obras por estilo y que están en exhibición
-     */
-    List<ObraEntity> findByEstiloAndEnExhibicion(String estilo, boolean enExhibicion);
-
-    /**
-     * Incrementar el contador de visitas de una obra
-     */
-    @Modifying
-    @Query("UPDATE ObraEntity o SET o.visitas = o.visitas + 1 WHERE o.id = :obraId")
-    void incrementarVisitas(@Param("obraId") Long obraId);
-
-    /**
-     * Actualizar la calificación promedio de una obra
-     */
-    @Modifying
-    @Query("UPDATE ObraEntity o SET o.calificacionPromedio = :nuevaCalificacion, " +
-           "o.totalValoraciones = o.totalValoraciones + 1 " +
-           "WHERE o.id = :obraId")
-    void actualizarCalificacion(@Param("obraId") Long obraId, @Param("nuevaCalificacion") double nuevaCalificacion);
-
-    
 @Query("""
         select o from ObraEntity o
         where (:palabraClave is null
@@ -85,19 +33,17 @@ Page<ObraEntity> buscar(
         @Param("enExhibicion") Boolean enExhibicion,
         Pageable pageable);
 
+    // join fetch del artista: el servicio gRPC filtra y mapea en memoria (la
+    // comparación sin acentos no se puede expresar en JPQL portable entre
+    // MariaDB y H2) y necesita el artista de cada obra sin una consulta por fila.
+    @Query("select o from ObraEntity o join fetch o.artista order by o.id")
+    List<ObraEntity> listarConArtista();
 
-    /**
-     * Buscar obras mejor calificadas
-     */
-    List<ObraEntity> findTop10ByOrderByCalificacionPromedioDesc();
+    @Query("select o from ObraEntity o join fetch o.artista where o.id in :ids")
+    List<ObraEntity> buscarPorIdsConArtista(@Param("ids") List<Long> ids);
 
-    /**
-     * Buscar obras más visitadas
-     */
-    List<ObraEntity> findTop10ByOrderByVisitasDesc();
-
-    /**
-     * Buscar obras por rango de años
-     */
-    List<ObraEntity> findByAnioCreacionBetween(int anioInicio, int anioFin);
+    // join fetch del artista: los inicializadores corren fuera de una transacción
+    // y completan también los datos del artista de una obra ya existente.
+    @Query("select o from ObraEntity o join fetch o.artista where o.titulo = :titulo")
+    Optional<ObraEntity> buscarPorTituloConArtista(@Param("titulo") String titulo);
 }

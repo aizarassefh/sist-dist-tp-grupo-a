@@ -6,93 +6,63 @@ option java_multiple_files = true;
 option java_package = "com.unla.museo.usuarios.grpc";
 option java_outer_classname = "UsuariosProto";
 
-// Servicio de Usuarios y Preferencias
+// Servicio de dominio de usuarios/visitantes: dueño de las preferencias y de
+// las interacciones. Lo implementa el backend Java, sobre el usuario de la
+// Entrega 1. Los usuarios se identifican por email porque es lo que viaja en
+// el JWT (claim sub): el gateway no conoce los ids internos.
 service UsuariosService {
-  // Gestión de usuarios
-  rpc ObtenerUsuario(ObtenerUsuarioRequest) returns (Usuario);
-  rpc ActualizarPreferencias(ActualizarPreferenciasRequest) returns (Usuario);
+  // Usuario y sus preferencias. NOT_FOUND si el email no existe.
+  rpc ObtenerPerfil(PerfilRequest) returns (Perfil);
 
-  // Preferencias y gustos
-  rpc ObtenerPreferencias(ObtenerPreferenciasRequest) returns (PreferenciasUsuario);
-  rpc RegistrarInteraccion(RegistrarInteraccionRequest) returns (InteraccionResponse);
+  // Reemplaza las preferencias completas del usuario.
+  rpc ActualizarPreferencias(ActualizarPreferenciasRequest) returns (Perfil);
 
-  // Historial del usuario
-  rpc ObtenerHistorialVisitas(ObtenerHistorialRequest) returns (HistorialVisitasResponse);
-  rpc ObtenerObrasFavoritas(ObtenerObrasFavoritasRequest) returns (ObrasFavoritasResponse);
+  // Registra que el usuario vio una obra o la marcó como de interés.
+  // NOT_FOUND si el usuario no existe. No valida la obra: guarda solo su id,
+  // porque la tabla obras es del catálogo; el gateway la verifica antes con
+  // CatalogoService.ObtenerObras.
+  rpc RegistrarInteraccion(RegistrarInteraccionRequest) returns (Interaccion);
+
+  // Interacciones del usuario, la más reciente primero.
+  rpc ListarInteracciones(PerfilRequest) returns (InteraccionesResponse);
 }
 
-// Mensajes
-message Usuario {
+message Preferencias {
+  repeated string movimientos = 1;
+  repeated string tecnicas = 2;
+  repeated string tematicas = 3;
+}
+
+message Perfil {
   int64 id = 1;
   string email = 2;
   string nombre = 3;
   string apellido = 4;
-  string rol = 5;
-  PreferenciasUsuario preferencias = 6;
-  string fecha_registro = 7;
+  string rol = 5;             // VISITANTE | CURADOR | ADMINISTRADOR
+  Preferencias preferencias = 6;
 }
 
-message PreferenciasUsuario {
-  repeated string estilos_favoritos = 1;
-  repeated string tecnicas_favoritas = 2;
-  repeated int64 artistas_favoritos = 3;
-  repeated string temas_interes = 4;
-  double umbral_calificacion = 5; // Calificación mínima que valora el usuario
-}
-
-message InteraccionUsuario {
-  int64 id = 1;
-  int64 usuario_id = 2;
-  int64 obra_id = 3;
-  string tipo_interaccion = 4; // VISITA, FAVORITO, VALORACION, COMPARTIR
-  int32 duracion_segundos = 5;
-  string fecha = 6;
-}
-
-// Requests y Responses
-message ObtenerUsuarioRequest {
-  int64 id = 1;
-  string email = 2;
+message PerfilRequest {
+  string email = 1;
 }
 
 message ActualizarPreferenciasRequest {
-  int64 usuario_id = 1;
-  repeated string estilos_favoritos = 2;
-  repeated string tecnicas_favoritas = 3;
-  repeated int64 artistas_favoritos = 4;
-  repeated string temas_interes = 5;
-}
-
-message ObtenerPreferenciasRequest {
-  int64 usuario_id = 1;
+  string email = 1;
+  Preferencias preferencias = 2;
 }
 
 message RegistrarInteraccionRequest {
-  int64 usuario_id = 1;
+  string email = 1;
   int64 obra_id = 2;
-  string tipo_interaccion = 3;
-  int32 duracion_segundos = 4;
+  string tipo = 3;            // VISTA | INTERES
 }
 
-message InteraccionResponse {
-  bool exito = 1;
-  string mensaje = 2;
+message Interaccion {
+  int64 obra_id = 1;
+  string tipo = 2;
+  string fecha = 3;           // ISO 8601 local
 }
 
-message ObtenerHistorialRequest {
-  int64 usuario_id = 1;
-  int32 dias_atras = 2;
-}
-
-message HistorialVisitasResponse {
-  repeated InteraccionUsuario interacciones = 1;
-  int32 total = 2;
-}
-
-message ObtenerObrasFavoritasRequest {
-  int64 usuario_id = 1;
-}
-
-message ObrasFavoritasResponse {
-  repeated int64 obra_ids = 1;
+message InteraccionesResponse {
+  repeated Interaccion interacciones = 1;
 }

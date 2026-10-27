@@ -1,301 +1,100 @@
 package com.unla.museo.gateway.controller;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import com.unla.museo.catalogo.grpc.BuscarObrasRequest;
+import com.unla.museo.catalogo.grpc.Obra;
+import com.unla.museo.catalogo.grpc.ObrasResponse;
+import com.unla.museo.catalogo.grpc.ObtenerObrasRequest;
+import com.unla.museo.gateway.error.ErrorGateway;
+import com.unla.museo.gateway.grpc.ServiciosGrpc;
+import com.unla.museo.gateway.grpc.Trazas;
+import com.unla.museo.gateway.json.MapeadorJson;
+import com.unla.museo.gateway.json.MapeadorJson.ObraJson;
+import com.unla.museo.gateway.json.MapeadorJson.PreferenciasJson;
+import com.unla.museo.motor.grpc.RecomendarRequest;
+import com.unla.museo.usuarios.grpc.Interaccion;
+import com.unla.museo.usuarios.grpc.Preferencias;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import static com.unla.museo.gateway.seguridad.FiltroJwt.ATRIBUTO_EMAIL;
+
 /**
- * Controller REST para Recomendaciones (Hito 2).
- * Conecta con el microservicio NestJS via gRPC.
+ * GET /api/v2/recomendaciones: (Perfil, Interacciones, Eventos del usuario) en
+ * paralelo -> (todas las obras, obras de las interacciones) en paralelo -> Motor.
  */
 @RestController
 @RequestMapping("/api/v2/recomendaciones")
-@RequiredArgsConstructor
-@Slf4j
 public class RecomendacionesController {
 
-    // El cliente gRPC llamaría al servicio NestJS en puerto 9091
-
-    /**
-     * GET /api/v2/recomendaciones/personalizadas
-     * Obtiene recomendaciones personalizadas para el usuario
-     */
-    @GetMapping("/personalizadas")
-    public Mono<ResponseEntity<Map<String, Object>>> obtenerRecomendaciones(
-            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "1") Long usuarioId,
-            @RequestParam(required = false, defaultValue = "10") int cantidad,
-            @RequestParam(required = false) String contexto) {
-        log.info("Obteniendo recomendaciones para usuario: {}, cantidad: {}", usuarioId, cantidad);
-
-        // Llamaría al servicio NestJS via gRPC
-        // grpcRecomendacionesClient.obtenerRecomendaciones(request)
-
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "recomendaciones", List.of(
-                Map.of(
-                    "obra", Map.of(
-                        "id", 3,
-                        "titulo", "Impresión, sol naciente",
-                        "artista", Map.of(
-                            "id", 2,
-                            "nombre", "Claude Monet",
-                            "nacionalidad", "Francesa"
-                        ),
-                        "estilo", "Impresionismo",
-                        "tecnica", "Óleo sobre lienzo",
-                        "imagenUrl", "/obras/sol-naciente.jpg",
-                        "calificacionPromedio", 4.8
-                    ),
-                    "score", 94.5,
-                    "razon", "Basado en tu interés en Impresionismo",
-                    "tipoRecomendacion", "PERSONAL"
-                ),
-                Map.of(
-                    "obra", Map.of(
-                        "id", 8,
-                        "titulo", "El caminante sobre el mar de nubes",
-                        "artista", Map.of(
-                            "id", 4,
-                            "nombre", "Caspar David Friedrich",
-                            "nacionalidad", "Alemana"
-                        ),
-                        "estilo", "Romanticismo",
-                        "tecnica", "Óleo sobre lienzo",
-                        "imagenUrl", "/obras/caminante.jpg",
-                        "calificacionPromedio", 4.7
-                    ),
-                    "score", 87.2,
-                    "razon", "Coincide con tus técnicas favoritas: Óleo",
-                    "tipoRecomendacion", "PERSONAL"
-                ),
-                Map.of(
-                    "obra", Map.of(
-                        "id", 15,
-                        "titulo", "El beso",
-                        "artista", Map.of(
-                            "id", 5,
-                            "nombre", "Gustav Klimt",
-                            "nacionalidad", "Austriaca"
-                        ),
-                        "estilo", "Art Nouveau",
-                        "tecnica", "Óleo y pan de oro",
-                        "imagenUrl", "/obras/beso.jpg",
-                        "calificacionPromedio", 4.9
-                    ),
-                    "score", 82.1,
-                    "razon", "Popular entre usuarios con gustos similares",
-                    "tipoRecomendacion", "COLABORATIVA"
-                )
-            ),
-            "preferenciasUsadas", Map.of(
-                "estilosFavoritos", List.of("Impresionismo", "Post-Impresionismo"),
-                "tecnicasFavoritas", List.of("Óleo", "Témpera"),
-                "artistasFavoritos", List.of(1, 2, 3),
-                "umbralCalificacion", 4.0
-            ),
-            "totalDisponibles", 25
-        )));
+    public record RecomendacionJson(ObraJson obra, double puntaje, List<String> motivos) {
     }
 
-    /**
-     * GET /api/v2/recomendaciones/contextuales
-     * Obtiene sugerencias basadas en la obra actual
-     */
-    @GetMapping("/contextuales")
-    public Mono<ResponseEntity<Map<String, Object>>> obtenerSugerenciasContextuales(
-            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "1") Long usuarioId,
-            @RequestParam Long obraActualId,
-            @RequestParam(required = false, defaultValue = "SIGUIENTE_OBRA") String tipoSugerencia,
-            @RequestParam(required = false, defaultValue = "5") int cantidad) {
-        log.info("Obteniendo sugerencias contextuales para obra: {}, tipo: {}", obraActualId, tipoSugerencia);
-
-        String mensaje = switch (tipoSugerencia) {
-            case "MISMO_ESTILO" -> "Otras obras del mismo estilo";
-            case "MISMO_ARTISTA" -> "Más obras del mismo artista";
-            case "COMPLETAR_VISITA" -> "Para completar tu visita";
-            default -> "Siguiente obra recomendada";
-        };
-
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "obraActual", Map.of(
-                "id", obraActualId,
-                "titulo", "Obra actual"
-            ),
-            "recomendaciones", List.of(
-                Map.of(
-                    "obra", Map.of(
-                        "id", obraActualId + 1,
-                        "titulo", "Obra recomendada " + tipoSugerencia.toLowerCase().replace("_", " "),
-                        "estilo", "Impresionismo",
-                        "imagenUrl", "/obras/recomendada-1.jpg"
-                    ),
-                    "score", 92.0,
-                    "razon", mensaje,
-                    "tipoRecomendacion", tipoSugerencia
-                ),
-                Map.of(
-                    "obra", Map.of(
-                        "id", obraActualId + 2,
-                        "titulo", "Otra obra relacionada",
-                        "estilo", "Impresionismo",
-                        "imagenUrl", "/obras/recomendada-2.jpg"
-                    ),
-                    "score", 85.5,
-                    "razon", "Usuarios similares también vieron",
-                    "tipoRecomendacion", tipoSugerencia
-                )
-            ),
-            "totalDisponibles", cantidad
-        )));
+    public record RespuestaRecomendaciones(List<RecomendacionJson> recomendaciones, String criterio,
+                                           PreferenciasJson preferencias, List<Trazas.Traza> trazas) {
     }
 
-    /**
-     * GET /api/v2/recomendaciones/populares
-     * Obtiene las obras más populares
-     */
-    @GetMapping("/populares")
-    public Mono<ResponseEntity<Map<String, Object>>> obtenerObrasPopulares(
-            @RequestParam(required = false, defaultValue = "mes") String periodo,
-            @RequestParam(required = false, defaultValue = "10") int cantidad,
-            @RequestParam(required = false) String filtroEstilo) {
-        log.info("Obteniendo obras populares - periodo: {}, cantidad: {}", periodo, cantidad);
+    private final ServiciosGrpc servicios;
 
-        String subtitulo = filtroEstilo != null
-            ? "Las obras de " + filtroEstilo + " más visitadas"
-            : "Las obras más visitadas de este " + periodo;
-
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "obras", List.of(
-                Map.of(
-                    "obra", Map.of(
-                        "id", 12,
-                        "titulo", "La Gioconda",
-                        "artista", Map.of("nombre", "Leonardo da Vinci"),
-                        "estilo", "Renacimiento",
-                        "imagenUrl", "/obras/gioconda.jpg"
-                    ),
-                    "visitas", 12543,
-                    "calificacionPromedio", 4.9,
-                    "posicionRanking", 1
-                ),
-                Map.of(
-                    "obra", Map.of(
-                        "id", 5,
-                        "titulo", "La persistencia de la memoria",
-                        "artista", Map.of("nombre", "Salvador Dalí"),
-                        "estilo", "Surrealismo",
-                        "imagenUrl", "/obras/ persistencia.jpg"
-                    ),
-                    "visitas", 11234,
-                    "calificacionPromedio", 4.8,
-                    "posicionRanking", 2
-                ),
-                Map.of(
-                    "obra", Map.of(
-                        "id", 1,
-                        "titulo", "Noche estrellada",
-                        "artista", Map.of("nombre", "Vincent van Gogh"),
-                        "estilo", "Post-Impresionismo",
-                        "imagenUrl", "/obras/noche-estrellada.jpg"
-                    ),
-                    "visitas", 9876,
-                    "calificacionPromedio", 4.8,
-                    "posicionRanking", 3
-                )
-            ),
-            "periodo", periodo,
-            "subtitulo", subtitulo
-        )));
+    public RecomendacionesController(ServiciosGrpc servicios) {
+        this.servicios = servicios;
     }
 
-    /**
-     * GET /api/v2/recomendaciones/tendencias
-     * Obtiene obras en tendencia
-     */
-    @GetMapping("/tendencias")
-    public Mono<ResponseEntity<Map<String, Object>>> obtenerObrasTendencia(
-            @RequestParam(required = false, defaultValue = "10") int cantidad,
-            @RequestParam(required = false, defaultValue = "semana") String periodoComparacion) {
-        log.info("Obteniendo obras en tendencia - cantidad: {}", cantidad);
+    @GetMapping
+    public Mono<RespuestaRecomendaciones> recomendar(@RequestParam(defaultValue = "6") int cantidad,
+                                                     @RequestAttribute(ATRIBUTO_EMAIL) String email) {
+        if (cantidad < 1 || cantidad > 20) {
+            throw ErrorGateway.pedidoInvalido("cantidad debe estar entre 1 y 20");
+        }
 
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "obras", List.of(
-                Map.of(
-                    "obra", Map.of(
-                        "id", 42,
-                        "titulo", "La joven de la perla",
-                        "artista", Map.of("nombre", "Johannes Vermeer"),
-                        "estilo", "Barroco",
-                        "imagenUrl", "/obras/perla.jpg"
-                    ),
-                    "variacionVisitas", 145.5,
-                    "nuevosComentarios", 28,
-                    "scoreTendencia", 89.5
-                ),
-                Map.of(
-                    "obra", Map.of(
-                        "id", 23,
-                        "titulo", "La gran ola de Kanagawa",
-                        "artista", Map.of("nombre", "Hokusai"),
-                        "estilo", "Ukiyo-e",
-                        "imagenUrl", "/obras/ola.jpg"
-                    ),
-                    "variacionVisitas", 123.8,
-                    "nuevosComentarios", 35,
-                    "scoreTendencia", 87.2
-                ),
-                Map.of(
-                    "obra", Map.of(
-                        "id", 17,
-                        "titulo", "Guernica",
-                        "artista", Map.of("nombre", "Pablo Picasso"),
-                        "estilo", "Cubismo",
-                        "imagenUrl", "/obras/guernica.jpg"
-                    ),
-                    "variacionVisitas", 98.4,
-                    "nuevosComentarios", 42,
-                    "scoreTendencia", 82.1
-                )
-            ),
-            "tendenciaCalculada", "Obras del período Barroco en auge"
-        )));
-    }
+        Trazas trazas = new Trazas();
+        return Mono.zip(
+                        servicios.obtenerPerfil(trazas, email),
+                        servicios.listarInteracciones(trazas, email),
+                        servicios.listarEventosDeUsuario(trazas, email))
+                .flatMap(datosUsuario -> {
+                    Preferencias preferencias = datosUsuario.getT1().getPreferencias();
+                    List<Interaccion> interacciones = datosUsuario.getT2().getInteraccionesList();
 
-    /**
-     * GET /api/v2/recomendaciones/{usuarioId}/historial
-     * Obtiene recomendaciones basadas en el historial del usuario via NestJS
-     */
-    @GetMapping("/{usuarioId}/historial")
-    public Mono<ResponseEntity<Map<String, Object>>> obtenerRecomendacionesHistorial(
-            @PathVariable Long usuarioId,
-            @RequestParam(required = false, defaultValue = "10") int cantidad) {
-        log.info("Obteniendo recomendaciones basadas en historial para usuario: {}", usuarioId);
+                    // Las obras repetidas en las interacciones se piden una sola vez.
+                    LinkedHashSet<Long> idsInteraccion = new LinkedHashSet<>();
+                    interacciones.forEach(i -> idsInteraccion.add(i.getObraId()));
 
-        // Esto llamaría al servicio NestJS via gRPC usando el historial
+                    Mono<ObrasResponse> conInteraccion = idsInteraccion.isEmpty()
+                            ? Mono.just(ObrasResponse.getDefaultInstance())
+                            : servicios.obtenerObras(trazas, ObtenerObrasRequest.newBuilder().addAllIds(idsInteraccion).build());
 
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "recomendaciones", List.of(
-                Map.of(
-                    "obra", Map.of(
-                        "id", 33,
-                        "titulo", "Las meninas",
-                        "artista", Map.of("nombre", "Diego Velázquez"),
-                        "estilo", "Barroco",
-                        "imagenUrl", "/obras/meninas.jpg"
-                    ),
-                    "score", 91.2,
-                    "razon", "Complementa tu interés en retratos del siglo XVII",
-                    "tipoRecomendacion", "HISTORIAL"
-                )
-            ),
-            "basadoEnHistorial", true,
-            "totalObrasVisitadas", 15,
-            "totalDisponibles", 8
-        )));
+                    return Mono.zip(servicios.buscarObras(trazas, BuscarObrasRequest.getDefaultInstance()), conInteraccion)
+                            .flatMap(obras -> {
+                                RecomendarRequest pedido = RecomendarRequest.newBuilder()
+                                        .addAllCandidatas(obras.getT1().getObrasList())
+                                        .setPreferencias(preferencias)
+                                        .addAllInteracciones(interacciones)
+                                        .addAllObrasConInteraccion(obras.getT2().getObrasList())
+                                        .addAllEventosInscriptos(datosUsuario.getT3().getEventosList())
+                                        .setCantidad(cantidad)
+                                        .build();
+                                return servicios.recomendar(trazas, pedido).map(respuesta -> {
+                                    Map<Long, Obra> porId = new HashMap<>();
+                                    obras.getT2().getObrasList().forEach(o -> porId.put(o.getId(), o));
+                                    obras.getT1().getObrasList().forEach(o -> porId.put(o.getId(), o));
+                                    List<RecomendacionJson> lista = respuesta.getRecomendacionesList().stream()
+                                            .map(r -> new RecomendacionJson(
+                                                    porId.containsKey(r.getObraId()) ? MapeadorJson.obra(porId.get(r.getObraId())) : null,
+                                                    r.getPuntaje(), List.copyOf(r.getMotivosList())))
+                                            .toList();
+                                    return new RespuestaRecomendaciones(lista, respuesta.getCriterio(),
+                                            MapeadorJson.preferencias(preferencias), trazas.comoLista());
+                                });
+                            });
+                });
     }
 }

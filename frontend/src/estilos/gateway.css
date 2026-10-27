@@ -1,0 +1,521 @@
+/* =========================
+   ENTREGA 2: RECORRIDOS, COMPARACIÓN, RECOMENDACIONES Y EXPLORACIÓN
+   Mismo sistema que el resto del sitio (variables de base.css); acá solo
+   lo que esas pantallas necesitan y las demás no.
+   ========================= */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- Formularios de pedido ---- */
+
+.formulario-gateway {
+  display: grid;
+  gap: var(--espacio-5);
+  margin-bottom: var(--espacio-7);
+  padding: var(--espacio-5) 0;
+  border-top: 1px solid var(--tinta);
+  border-bottom: 1px solid var(--linea);
+}
+
+.formulario-gateway-numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 260px));
+  gap: var(--espacio-4);
+}
+
+.formulario-gateway-check {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  font-size: 15px;
+}
+
+.formulario-gateway-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-4);
+}
+
+.aviso-ok {
+  color: var(--ok);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ---- Selector de categorías: opciones como etiquetas tildables ---- */
+
+.selector {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.selector legend {
+  margin-bottom: var(--espacio-2);
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.selector-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+
+.selector-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: 6px 12px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio);
+  background-color: var(--papel-claro);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.selector-opcion:has(input:checked) {
+  border-color: var(--acento);
+  background-color: var(--acento-tenue);
+}
+
+.selector-opcion:has(input:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.selector-opcion input {
+  accent-color: var(--acento);
+}
+
+.selector-cantidad {
+  margin-left: var(--espacio-1);
+  color: var(--tinta-tenue);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.selector-vacio {
+  margin: 0;
+  color: var(--tinta-tenue);
+  font-size: 14px;
+}
+
+/* ---- Resultados ---- */
+
+.resultado {
+  margin-top: var(--espacio-6);
+}
+
+.resultado-seccion {
+  margin-bottom: var(--espacio-7);
+}
+
+.resultado-resumen {
+  margin: 0 0 var(--espacio-4);
+  color: var(--tinta-suave);
+  font-family: var(--serif);
+  font-size: 20px;
+}
+
+.notas {
+  max-width: var(--ancho-lectura);
+  margin: var(--espacio-5) 0;
+  padding-left: var(--espacio-5);
+  color: var(--tinta-suave);
+}
+
+/* Cómo se resolvió: texto chico y tenue, pero siempre debajo del resultado. */
+.trazas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espacio-1) var(--espacio-2);
+  margin: var(--espacio-6) 0 0;
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--linea);
+  color: var(--tinta-tenue);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trazas-rotulo {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.traza {
+  display: inline-flex;
+  gap: var(--espacio-2);
+}
+
+.traza-flecha {
+  color: var(--acento);
+}
+
+/* ---- Recorridos y recomendaciones: lista numerada de obras ---- */
+
+.recorrido-paradas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--tinta);
+}
+
+.parada {
+  display: grid;
+  grid-template-columns: 56px 110px minmax(0, 1fr);
+  gap: var(--espacio-5);
+  align-items: center;
+  padding: var(--espacio-5) 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.parada-numero {
+  font-family: var(--serif);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--acento);
+  text-align: center;
+}
+
+.parada-puntaje {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 28px;
+}
+
+.parada-puntaje small {
+  margin-top: var(--espacio-1);
+  color: var(--tinta-tenue);
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.parada-imagen {
+  display: block;
+  width: 110px;
+  height: 130px;
+  padding: var(--espacio-2);
+  background-color: var(--papel-hundido);
+  object-fit: contain;
+}
+
+.parada-titulo {
+  margin: 0;
+  font-size: 24px;
+  font-style: italic;
+}
+
+.parada-titulo a {
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.parada-titulo a:hover {
+  color: var(--acento);
+}
+
+.parada-artista {
+  margin: var(--espacio-1) 0 0;
+  font-size: 14px;
+}
+
+.parada-datos {
+  margin: 2px 0 0;
+  color: var(--tinta-tenue);
+  font-size: 13px;
+}
+
+.parada-motivo {
+  max-width: var(--ancho-lectura);
+  margin: var(--espacio-2) 0 0;
+  color: var(--tinta-suave);
+  font-family: var(--serif);
+  font-size: 17px;
+}
+
+.motivos {
+  max-width: var(--ancho-lectura);
+  margin: var(--espacio-2) 0 0;
+  padding-left: var(--espacio-4);
+  color: var(--tinta-suave);
+  font-family: var(--serif);
+  font-size: 17px;
+}
+
+.criterio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-3);
+  margin: 0 0 var(--espacio-5);
+  color: var(--tinta-suave);
+}
+
+.criterio-sello {
+  padding: 2px 10px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio);
+  color: var(--tinta-suave);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.criterio-personalizado {
+  border-color: var(--acento);
+  background-color: var(--acento-tenue);
+  color: var(--acento);
+}
+
+/* ---- Comparación ---- */
+
+.comparar-elegidas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+  margin: 0 0 var(--espacio-5);
+  padding: 0;
+  list-style: none;
+}
+
+.comparar-elegidas li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: 4px 4px 4px 12px;
+  border: 1px solid var(--acento);
+  border-radius: var(--radio);
+  background-color: var(--acento-tenue);
+  font-size: 14px;
+}
+
+.comparar-quitar {
+  padding: 0 8px;
+  border: none;
+  background: none;
+  color: var(--acento);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.comparar-quitar:hover {
+  background: none;
+  color: var(--acento-oscuro);
+}
+
+.comparar-busqueda {
+  max-width: 360px;
+  margin-bottom: var(--espacio-4);
+}
+
+.comparar-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--espacio-2);
+  max-height: 340px;
+  margin: 0 0 var(--espacio-5);
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.comparar-opcion {
+  display: flex;
+  height: 100%;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-comparacion {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  border-top: 1px solid var(--tinta);
+}
+
+.tabla-comparacion th,
+.tabla-comparacion td {
+  padding: var(--espacio-3) var(--espacio-4);
+  border-bottom: 1px solid var(--linea);
+  text-align: left;
+  vertical-align: top;
+}
+
+.tabla-comparacion thead th {
+  font-weight: 400;
+}
+
+.tabla-comparacion thead a {
+  display: block;
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.tabla-comparacion thead a:hover .comparacion-titulo {
+  color: var(--acento);
+}
+
+.comparacion-imagen {
+  display: block;
+  width: 100%;
+  max-width: 180px;
+  height: 200px;
+  padding: var(--espacio-2);
+  background-color: var(--papel-hundido);
+  object-fit: contain;
+}
+
+.comparacion-titulo {
+  display: block;
+  margin-top: var(--espacio-2);
+  font-family: var(--serif);
+  font-size: 19px;
+  font-style: italic;
+}
+
+.tabla-comparacion tbody th {
+  width: 150px;
+  color: var(--tinta-tenue);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* La fila donde las obras coinciden se resalta con fondo y una marca de
+   texto, para que no dependa solo del color. */
+.tabla-comparacion tr.coinciden td,
+.tabla-comparacion tr.coinciden th {
+  background-color: var(--acento-tenue);
+}
+
+.coinciden-marca {
+  display: block;
+  margin-top: var(--espacio-1);
+  color: var(--acento);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.comparacion-descripcion {
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--tinta-suave);
+}
+
+/* ---- Exploración ---- */
+
+.movimientos {
+  border-top: 1px solid var(--tinta);
+}
+
+.artistas,
+.eventos-vinculados,
+.otros-movimientos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.artistas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--espacio-5) var(--espacio-6);
+}
+
+.artista {
+  padding-left: var(--espacio-3);
+  border-left: 1px solid var(--linea-fuerte);
+}
+
+.artista h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.artista-datos {
+  margin: var(--espacio-1) 0 0;
+  color: var(--tinta-tenue);
+  font-size: 13px;
+}
+
+/* Biografía breve: tres líneas; el texto completo queda en el title. */
+.artista-biografia {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  margin: var(--espacio-2) 0 0;
+  overflow: hidden;
+  color: var(--tinta-suave);
+  font-size: 14px;
+}
+
+.eventos-vinculados {
+  border-top: 1px solid var(--tinta);
+}
+
+.eventos-vinculados .inicio-indice-titulo {
+  font-size: 22px;
+}
+
+.otros-movimientos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2) var(--espacio-5);
+}
+
+.otros-movimientos a {
+  font-family: var(--serif);
+  font-size: 20px;
+}
+
+/* ---- Acciones sobre una obra (ficha) ---- */
+
+.ficha-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-4) var(--espacio-5);
+  margin: 0 0 var(--espacio-6);
+}
+
+@media (max-width: 800px) {
+
+  .parada {
+    grid-template-columns: 40px 80px minmax(0, 1fr);
+    gap: var(--espacio-3);
+    align-items: start;
+  }
+
+  .parada-numero {
+    font-size: 30px;
+  }
+
+  .parada-imagen {
+    width: 80px;
+    height: 100px;
+  }
+
+}

@@ -1,164 +1,98 @@
 package com.unla.museo.gateway.controller;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+import com.unla.museo.catalogo.grpc.BuscarObrasRequest;
+import com.unla.museo.catalogo.grpc.Obra;
+import com.unla.museo.gateway.error.ErrorGateway;
+import com.unla.museo.gateway.grpc.ServiciosGrpc;
+import com.unla.museo.gateway.grpc.Trazas;
+import com.unla.museo.gateway.json.MapeadorJson;
+import com.unla.museo.gateway.json.MapeadorJson.ObraJson;
+import com.unla.museo.motor.grpc.ArmarRecorridoRequest;
+import com.unla.museo.motor.grpc.Recorrido;
+import com.unla.museo.usuarios.grpc.Perfil;
+import com.unla.museo.usuarios.grpc.Preferencias;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-/**
- * Controller REST para Recorridos Guiados (Hito 2).
- * Expone endpoints REST que internamente usan gRPC.
- */
+import static com.unla.museo.gateway.seguridad.FiltroJwt.ATRIBUTO_EMAIL;
+
+/** POST /api/v2/recorridos: Usuarios (opcional) -> Catálogo -> Motor. */
 @RestController
 @RequestMapping("/api/v2/recorridos")
-@RequiredArgsConstructor
-@Slf4j
 public class RecorridosController {
 
-    // Clientes gRPC serán inyectados automáticamente
-    // Por ahora retornamos respuestas simuladas
-
-    /**
-     * POST /api/v2/recorridos/generar
-     * Genera un recorrido personalizado
-     */
-    @PostMapping("/generar")
-    public Mono<ResponseEntity<Map<String, Object>>> generarRecorrido(
-            @RequestBody Map<String, Object> criterios) {
-        log.info("Generando recorrido con criterios: {}", criterios);
-
-        // Aquí se llamaría al servicio gRPC de Spring Boot
-        // grpcRecorridosService.generarRecorrido(request)
-
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "id", System.currentTimeMillis(),
-            "nombre", "Recorrido personalizado",
-            "descripcion", "Recorrido generado según sus preferencias",
-            "duracionEstimadaMinutos", 60,
-            "distanciaTotalMetros", 450.5,
-            "tema", criterios.getOrDefault("tipo", "Personalizado"),
-            "paradas", java.util.List.of(
-                Map.of("orden", 1, "obraId", 1, "tiempoSugeridoMinutos", 10),
-                Map.of("orden", 2, "obraId", 5, "tiempoSugeridoMinutos", 8),
-                Map.of("orden", 3, "obraId", 12, "tiempoSugeridoMinutos", 12)
-            ),
-            "compartible", true
-        )));
+    public record PedidoRecorrido(Integer duracionMinutos, List<String> movimientos, List<String> tecnicas,
+                                  List<String> tematicas, Integer cantidadObras, Boolean usarPreferencias) {
     }
 
-    /**
-     * GET /api/v2/recorridos
-     * Lista los recorridos del usuario
-     */
-    @GetMapping
-    public Mono<ResponseEntity<Map<String, Object>>> listarRecorridos(
-            @RequestParam(required = false, defaultValue = "0") int pagina,
-            @RequestParam(required = false, defaultValue = "10") int tamano) {
-        log.info("Listando recorridos - página: {}, tamaño: {}", pagina, tamano);
-
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "recorridos", java.util.List.of(
-                Map.of(
-                    "id", 1L,
-                    "nombre", "Descubriendo el Impresionismo",
-                    "descripcion", "Obras maestras del Impresionismo",
-                    "duracionEstimadaMinutos", 45,
-                    "tema", "Impresionismo",
-                    "fechaCreacion", "2024-01-15T10:00:00"
-                ),
-                Map.of(
-                    "id", 2L,
-                    "nombre", "Los grandes maestros",
-                    "descripcion", "Visita a obras de artistas destacados",
-                    "duracionEstimadaMinutos", 60,
-                    "tema", "Grandes Maestros",
-                    "fechaCreacion", "2024-01-20T15:30:00"
-                )
-            ),
-            "total", 2,
-            "pagina", pagina,
-            "tamanio", tamano
-        )));
+    public record ParadaJson(int orden, String sala, int minutosSugeridos, String motivo, ObraJson obra) {
     }
 
-    /**
-     * GET /api/v2/recorridos/{id}
-     * Obtiene un recorrido específico
-     */
-    @GetMapping("/{id}")
-    public Mono<ResponseEntity<Map<String, Object>>> obtenerRecorrido(
-            @PathVariable Long id) {
-        log.info("Obteniendo recorrido: {}", id);
-
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "id", id,
-            "nombre", "Recorrido del día",
-            "descripcion", "Recorrido personalizado",
-            "duracionEstimadaMinutos", 30,
-            "distanciaTotalMetros", 250.0,
-            "tema", "Ecléctico",
-            "paradas", java.util.List.of(
-                Map.of(
-                    "orden", 1,
-                    "obra", Map.of(
-                        "id", 1,
-                        "titulo", "Noche estrellada",
-                        "artista", Map.of("nombre", "Van Gogh")
-                    ),
-                    "tiempoSugeridoMinutos", 10,
-                    "notas", "Obra emblemática del post-impresionismo"
-                ),
-                Map.of(
-                    "orden", 2,
-                    "obra", Map.of(
-                        "id", 5,
-                        "titulo", "La persistencia de la memoria",
-                        "artista", Map.of("nombre", "Dalí")
-                    ),
-                    "tiempoSugeridoMinutos", 8,
-                    "notas", "Surrealismo puro"
-                )
-            ),
-            "compartible", true
-        )));
+    public record RespuestaRecorrido(List<ParadaJson> paradas, int duracionTotalMinutos, List<String> notas,
+                                     List<Trazas.Traza> trazas) {
     }
 
-    /**
-     * DELETE /api/v2/recorridos/{id}
-     * Elimina un recorrido
-     */
-    @DeleteMapping("/{id}")
-    public Mono<ResponseEntity<Map<String, Object>>> eliminarRecorrido(
-            @PathVariable Long id) {
-        log.info("Eliminando recorrido: {}", id);
+    private final ServiciosGrpc servicios;
 
-        // Aquí se llamaría al servicio gRPC para eliminar
-
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "exito", true,
-            "mensaje", "Recorrido eliminado correctamente"
-        )));
+    public RecorridosController(ServiciosGrpc servicios) {
+        this.servicios = servicios;
     }
 
-    /**
-     * POST /api/v2/recorridos/{id}/compartir
-     * Comparte un recorrido
-     */
-    @PostMapping("/{id}/compartir")
-    public Mono<ResponseEntity<Map<String, Object>>> compartirRecorrido(
-            @PathVariable Long id) {
-        log.info("Compartiendo recorrido: {}", id);
+    @PostMapping
+    public Mono<RespuestaRecorrido> generar(@RequestBody(required = false) PedidoRecorrido pedido,
+                                            @RequestAttribute(ATRIBUTO_EMAIL) String email) {
+        PedidoRecorrido p = pedido != null ? pedido
+                : new PedidoRecorrido(null, null, null, null, null, null);
+        validar(p);
 
-        String codigoCompartir = "RCD-" + id + "-" + System.currentTimeMillis();
+        Trazas trazas = new Trazas();
+        Mono<Preferencias> preferencias = Boolean.TRUE.equals(p.usarPreferencias())
+                ? servicios.obtenerPerfil(trazas, email).map(Perfil::getPreferencias)
+                : Mono.just(Preferencias.getDefaultInstance());
 
-        return Mono.just(ResponseEntity.ok(Map.of(
-            "exito", true,
-            "mensaje", "Recorrido compartido exitosamente",
-            "codigoCompartir", codigoCompartir,
-            "url", "/recorrido/compartido/" + codigoCompartir
-        )));
+        BuscarObrasRequest busqueda = BuscarObrasRequest.newBuilder()
+                .addAllMovimientos(MapeadorJson.listaSegura(p.movimientos()))
+                .addAllTecnicas(MapeadorJson.listaSegura(p.tecnicas()))
+                .addAllTematicas(MapeadorJson.listaSegura(p.tematicas()))
+                .setSoloEnExhibicion(true)
+                .build();
+
+        return preferencias.flatMap(prefs ->
+                servicios.buscarObras(trazas, busqueda).flatMap(candidatas -> {
+                    ArmarRecorridoRequest.Builder armado = ArmarRecorridoRequest.newBuilder()
+                            .addAllCandidatas(candidatas.getObrasList())
+                            .setDuracionMinutos(p.duracionMinutos() != null ? p.duracionMinutos() : 0)
+                            .setCantidadMaxima(p.cantidadObras() != null ? p.cantidadObras() : 0);
+                    // Sin usarPreferencias no se manda el campo: el motor no tiene que enterarse de ellas.
+                    if (Boolean.TRUE.equals(p.usarPreferencias())) {
+                        armado.setPreferencias(prefs);
+                    }
+                    return servicios.armarRecorrido(trazas, armado.build())
+                            .map(recorrido -> armarRespuesta(recorrido, candidatas.getObrasList(), trazas));
+                }));
+    }
+
+    private void validar(PedidoRecorrido p) {
+        if (p.duracionMinutos() != null && (p.duracionMinutos() < 15 || p.duracionMinutos() > 480)) {
+            throw ErrorGateway.pedidoInvalido("duracionMinutos debe estar entre 15 y 480");
+        }
+        if (p.cantidadObras() != null && (p.cantidadObras() < 1 || p.cantidadObras() > 30)) {
+            throw ErrorGateway.pedidoInvalido("cantidadObras debe estar entre 1 y 30");
+        }
+    }
+
+    private RespuestaRecorrido armarRespuesta(Recorrido recorrido, List<Obra> candidatas, Trazas trazas) {
+        Map<Long, Obra> porId = candidatas.stream().collect(Collectors.toMap(Obra::getId, Function.identity(), (a, b) -> a));
+        List<ParadaJson> paradas = recorrido.getParadasList().stream()
+                .map(pa -> new ParadaJson(pa.getOrden(), pa.getSala(), pa.getMinutosSugeridos(), pa.getMotivo(),
+                        porId.containsKey(pa.getObraId()) ? MapeadorJson.obra(porId.get(pa.getObraId())) : null))
+                .toList();
+        return new RespuestaRecorrido(paradas, recorrido.getDuracionTotalMinutos(),
+                List.copyOf(recorrido.getNotasList()), trazas.comoLista());
     }
 }

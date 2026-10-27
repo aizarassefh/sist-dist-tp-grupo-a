@@ -21,7 +21,7 @@
     <properties>
         <java.version>21</java.version>
         <protobuf.version>3.25.3</protobuf.version>
-        <grpc.version>1.61.1</grpc.version>
+        <grpc.version>1.63.0</grpc.version>
         <grpc-spring-boot.version>3.1.0.RELEASE</grpc-spring-boot.version>
         <lombok.version>1.18.36</lombok.version>
     </properties>

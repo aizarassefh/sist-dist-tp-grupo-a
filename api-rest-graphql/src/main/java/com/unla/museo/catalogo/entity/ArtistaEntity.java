@@ -28,9 +28,6 @@ public class ArtistaEntity {
     @Column(name = "NACIONALIDAD", length = 100)
     private String nacionalidad;
 
-    @Column(name = "IMAGEN_URL")
-    private String imagenUrl;
-
     @Column(name = "ANIO_NACIMIENTO")
     private Integer anioNacimiento;
 

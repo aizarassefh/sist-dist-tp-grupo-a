@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package museo.motor;
+
+import "catalogo.proto";
+import "eventos.proto";
+import "usuarios.proto";
+
+option java_multiple_files = true;
+option java_package = "com.unla.museo.motor.grpc";
+option java_outer_classname = "MotorProto";
+
+// Motor de experiencias: el servicio NestJS (TypeScript). No tiene base de
+// datos ni llama a otros servicios: recibe en cada pedido los datos que el
+// gateway juntó de Catálogo, Usuarios y Eventos, y devuelve el resultado del
+// cálculo. Así las reglas de negocio de recorridos, recomendaciones y
+// comparaciones viven en un servicio y no en el gateway.
+service MotorService {
+  rpc ArmarRecorrido(ArmarRecorridoRequest) returns (Recorrido);
+  rpc Recomendar(RecomendarRequest) returns (RecomendacionesResponse);
+  rpc CompararObras(CompararObrasRequest) returns (Comparacion);
+}
+
+// ---------- Recorrido ----------
+
+message ArmarRecorridoRequest {
+  repeated museo.catalogo.Obra candidatas = 1;   // Ya filtradas por criterios
+  int32 duracion_minutos = 2;                    // Tiempo disponible; 0 = sin límite
+  int32 cantidad_maxima = 3;                     // 0 = sin límite
+  museo.usuarios.Preferencias preferencias = 4;  // Para priorizar; puede venir vacío
+}
+
+message Parada {
+  int32 orden = 1;            // Empieza en 1
+  int64 obra_id = 2;
+  string sala = 3;
+  int32 minutos_sugeridos = 4;
+  string motivo = 5;          // Por qué se eligió, en lenguaje para el visitante
+}
+
+message Recorrido {
+  repeated Parada paradas = 1;
+  int32 duracion_total_minutos = 2;  // Observación + traslados entre salas
+  repeated string notas = 3;         // Ej.: "Quedaron 4 obras afuera por tiempo"
+}
+
+// ---------- Recomendación ----------
+
+message RecomendarRequest {
+  repeated museo.catalogo.Obra candidatas = 1;
+  museo.usuarios.Preferencias preferencias = 2;
+  repeated museo.usuarios.Interaccion interacciones = 3;
+  repeated museo.catalogo.Obra obras_con_interaccion = 4;  // Datos de las obras de interacciones
+  repeated museo.eventos.Evento eventos_inscriptos = 5;
+  int32 cantidad = 6;         // 0 = 6
+}
+
+message Recomendacion {
+  int64 obra_id = 1;
+  double puntaje = 2;
+  repeated string motivos = 3;
+}
+
+message RecomendacionesResponse {
+  repeated Recomendacion recomendaciones = 1;
+  string criterio = 2;        // PERSONALIZADO | EXPLORATORIO (sin datos del visitante)
+}
+
+// ---------- Comparación ----------
+
+message CompararObrasRequest {
+  repeated museo.catalogo.Obra obras = 1;  // 2 o más; si no, INVALID_ARGUMENT
+}
+
+message AtributoComparado {
+  string nombre = 1;              // Artista, Movimiento, Año, Técnica, ...
+  repeated string valores = 2;    // Uno por obra, en el orden recibido
+  bool coinciden = 3;
+}
+
+message Comparacion {
+  repeated AtributoComparado atributos = 1;
+  repeated string observaciones = 2;  // Ej.: "Las separan 386 años"
+}

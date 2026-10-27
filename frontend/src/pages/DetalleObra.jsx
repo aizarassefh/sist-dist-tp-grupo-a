@@ -1,10 +1,18 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client/react'
 import { OBRA_DETALLE_QUERY } from '../graphql/queries'
+import { mensajeDeErrorGateway, registrarInteraccion } from '../api/gateway'
+import { ROLES, tieneRol } from '../roles'
 import ImagenObra from '../components/ImagenObra'
 
-function DetalleObra() {
+function DetalleObra({ usuario }) {
   const { id } = useParams()
+  const esVisitante = tieneRol(usuario, ROLES.VISITANTE)
+
+  // 'enviando' | 'registrado' | mensaje de error | null
+  const [interes, setInteres] = useState(null)
+  const vistaRegistradaDe = useRef(null)
 
   const { loading, error, data } = useQuery(
     OBRA_DETALLE_QUERY,
@@ -12,6 +20,32 @@ function DetalleObra() {
       variables: { id }
     }
   )
+
+  const obraId = data?.obra?.id
+
+  // Solo cuenta como vista si la obra existe. La ref evita que StrictMode
+  // (que monta dos veces en desarrollo) registre la misma vista dos veces.
+  useEffect(() => {
+    if (!esVisitante || !obraId || vistaRegistradaDe.current === obraId) {
+      return
+    }
+    vistaRegistradaDe.current = obraId
+
+    // La vista alimenta las recomendaciones pero no es crítica: si falla
+    // (gateway caído, por ejemplo) no se le muestra nada al visitante.
+    registrarInteraccion(Number(obraId), 'VISTA').catch(() => {})
+  }, [esVisitante, obraId])
+
+  async function marcarInteres() {
+    setInteres('enviando')
+
+    try {
+      await registrarInteraccion(Number(obraId), 'INTERES')
+      setInteres('registrado')
+    } catch (error) {
+      setInteres(mensajeDeErrorGateway(error))
+    }
+  }
 
   if (loading) {
     return <p className="ficha-mensaje">Cargando obra...</p>
@@ -118,6 +152,36 @@ function DetalleObra() {
               </dd>
             </div>
           </dl>
+
+          <div className="ficha-acciones">
+            {esVisitante && (
+              <button
+                type="button"
+                onClick={marcarInteres}
+                disabled={interes === 'enviando' || interes === 'registrado'}
+              >
+                {interes === 'registrado' ? 'Te interesa' : 'Me interesa'}
+              </button>
+            )}
+
+            <Link
+              className="boton-detalle"
+              to={`/comparar?obra=${obra.id}`}
+            >
+              Comparar con otras obras
+            </Link>
+          </div>
+
+          {interes === 'registrado' && (
+            <p className="aviso-ok" role="status">
+              Anotamos tu interés. Lo vamos a tener en cuenta en tus{' '}
+              <Link to="/recomendaciones">recomendaciones</Link>.
+            </p>
+          )}
+
+          {interes && interes !== 'enviando' && interes !== 'registrado' && (
+            <p className="error">{interes}</p>
+          )}
 
           <p className="ficha-descripcion">
             {obra.descripcion}

@@ -1,19 +1,34 @@
 package com.unla.museo.usuarios.entity;
 
-import jakarta.persistence.*;
-import lombok.Data;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entidad que representa las preferencias de un usuario.
- * Almacena los estilos, técnicas, artistas y temas de interés del usuario.
+ * Gustos declarados por el visitante. Los tres ejes coinciden con las
+ * categorías del catálogo (movimiento, técnica, temática) para que el motor de
+ * recomendaciones pueda cruzarlos sin traducir.
  */
 @Entity
-@Table(name = "preferencias_usuario")
-@Data
+// Nombre distinto al de la primera versión de la rama gRPC: aquellas tablas
+// tenían otras columnas (un ENUM con otros valores, columnas NOT NULL) y
+// ddl-auto=update no las corrige; con un nombre nuevo Hibernate las crea
+// bien también en las bases de desarrollo que ya corrieron esa versión.
+@Table(name = "preferencias_visitante")
+@Getter
+@Setter
 @NoArgsConstructor
 public class PreferenciasUsuario {
 
@@ -22,25 +37,17 @@ public class PreferenciasUsuario {
     private Long id;
 
     @ElementCollection
-    @CollectionTable(name = "preferencias_estilos", joinColumns = @JoinColumn(name = "preferencia_id"))
-    @Column(name = "estilo")
-    private List<String> estilosFavoritos = new ArrayList<>();
+    @CollectionTable(name = "preferencias_visitante_movimientos", joinColumns = @JoinColumn(name = "preferencia_id"))
+    @Column(name = "movimiento")
+    private List<String> movimientos = new ArrayList<>();
 
     @ElementCollection
-    @CollectionTable(name = "preferencias_tecnicas", joinColumns = @JoinColumn(name = "preferencia_id"))
+    @CollectionTable(name = "preferencias_visitante_tecnicas", joinColumns = @JoinColumn(name = "preferencia_id"))
     @Column(name = "tecnica")
-    private List<String> tecnicasFavoritas = new ArrayList<>();
+    private List<String> tecnicas = new ArrayList<>();
 
     @ElementCollection
-    @CollectionTable(name = "preferencias_artistas", joinColumns = @JoinColumn(name = "preferencia_id"))
-    @Column(name = "artista_id")
-    private List<Long> artistasFavoritos = new ArrayList<>();
-
-    @ElementCollection
-    @CollectionTable(name = "preferencias_temas", joinColumns = @JoinColumn(name = "preferencia_id"))
-    @Column(name = "tema")
-    private List<String> temasInteres = new ArrayList<>();
-
-    @Column(name = "umbral_calificacion")
-    private Double umbralCalificacion = 3.0;
+    @CollectionTable(name = "preferencias_visitante_tematicas", joinColumns = @JoinColumn(name = "preferencia_id"))
+    @Column(name = "tematica")
+    private List<String> tematicas = new ArrayList<>();
 }

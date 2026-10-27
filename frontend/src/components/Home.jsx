@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import ImagenObra from './ImagenObra'
-import { esGestor } from '../roles'
+import { ROLES, esGestor, tieneRol } from '../roles'
 
 // Un índice en filas y no tres tarjetas iguales: cada sección se nombra con
 // lo que se hace ahí.
@@ -22,6 +22,32 @@ const SECCIONES = [
   }
 ]
 
+const SECCION_COMPARAR = {
+  ruta: '/comparar',
+  titulo: 'Comparar obras',
+  texto: 'Poné de dos a seis obras lado a lado y mirá qué tienen en común.'
+}
+
+const SECCION_EXPLORAR = {
+  ruta: '/explorar',
+  titulo: 'Explorar por movimiento',
+  texto: 'Las obras, los artistas y los eventos de cada movimiento artístico.'
+}
+
+// Estas dos dependen del perfil del visitante (preferencias e interacciones).
+const SECCIONES_VISITANTE = [
+  {
+    ruta: '/recorridos',
+    titulo: 'Recorridos',
+    texto: 'Un recorrido por las salas armado a la medida de tu tiempo y tus gustos.'
+  },
+  {
+    ruta: '/recomendaciones',
+    titulo: 'Recomendaciones',
+    texto: 'Obras que te pueden gustar, según tus preferencias y lo que viste.'
+  }
+]
+
 const SECCION_REPORTE = {
   ruta: '/reporte',
   titulo: 'Reporte de asistencia',
@@ -29,9 +55,13 @@ const SECCION_REPORTE = {
 }
 
 function Home({ usuario }) {
-  const secciones = esGestor(usuario)
-    ? [...SECCIONES, SECCION_REPORTE]
-    : SECCIONES
+  const secciones = [
+    ...SECCIONES,
+    ...(tieneRol(usuario, ROLES.VISITANTE) ? SECCIONES_VISITANTE : []),
+    SECCION_COMPARAR,
+    SECCION_EXPLORAR,
+    ...(esGestor(usuario) ? [SECCION_REPORTE] : [])
+  ]
 
   return (
     <div className="inicio">

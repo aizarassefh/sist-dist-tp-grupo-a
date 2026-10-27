@@ -1,17 +1,10 @@
-# =============================================================================
-# MUSEO VIRTUAL - Docker Compose
-# Sistema distribuido con arquitectura de microservicios y gRPC
-# =============================================================================
 # Base de datos para desarrollo y para la demo.
 #   docker compose up -d      levanta MariaDB en el puerto 3306
 #   docker compose down       la apaga (los datos quedan en el volumen)
 #   docker compose down -v    la apaga y borra los datos
 # Usuario, clave y base coinciden con los valores por defecto de
-# backend/src/main/resources/application.properties.
+# api-rest-graphql/src/main/resources/application.properties.
 services:
-  # ===========================================================================
-  # 1. BASE DE DATOS - MariaDB
-  # ===========================================================================
   mariadb:
     image: mariadb:11.4
     container_name: museo-mariadb
@@ -24,139 +17,11 @@ services:
       - "${DB_PUERTO:-3306}:3306"
     volumes:
       - museo-datos:/var/lib/mysql
-      - ./init-db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 20
-    networks:
-      - museo-network
-    restart: unless-stopped
-
-  # ===========================================================================
-  # 2. BACKEND SPRING BOOT (API REST + GraphQL + gRPC Server)
-  # ===========================================================================
-  api-rest-graphql:
-    build:
-      context: ./api-rest-graphql
-      dockerfile: Dockerfile
-    container_name: museo-api
-    environment:
-      - DB_URL=jdbc:mariadb://mariadb:3306/museodb
-      - DB_USUARIO=museo
-      - DB_CLAVE=museo
-      - JWT_SECRET=${JWT_SECRET:-clave-secreta-museo-virtual-32-chars}
-      - FRONTEND_URL=http://localhost:5173
-      - SPRING_PROFILES_ACTIVE=docker
-      - GRPC_SERVER_PORT=9090
-    ports:
-      - "8000:8000"   # REST API
-      - "9090:9090"   # gRPC Server
-    depends_on:
-      mariadb:
-        condition: service_healthy
-    networks:
-      - museo-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
-  # ===========================================================================
-  # 3. MICOSERVICIO NESTJS (Recomendaciones via gRPC)
-  # ===========================================================================
-  nestjs-service:
-    build:
-      context: ./nestjs-service
-      dockerfile: Dockerfile
-    container_name: museo-nestjs
-    environment:
-      - GRPC_PORT=9091
-      - NODE_ENV=production
-    ports:
-      - "9091:9091"   # gRPC Server
-    networks:
-      - museo-network
-    restart: unless-stopped
-    depends_on:
-      - api-rest-graphql
-
-  # ===========================================================================
-  # 4. SPRING CLOUD GATEWAY (Orquestador/API Gateway)
-  # ===========================================================================
-  gateway:
-    build:
-      context: ./gateway
-      dockerfile: Dockerfile
-    container_name: museo-gateway
-    environment:
-      - SPRING_BOOT_HOST=api-rest-graphql
-      - SPRING_BOOT_PORT=8000
-      - NESTJS_HOST=nestjs-service
-      - NESTJS_PORT=9091
-      - FRONTEND_URL=http://localhost:5173
-    ports:
-      - "8080:8080"   # API Gateway
-    depends_on:
-      - api-rest-graphql
-      - nestjs-service
-    networks:
-      - museo-network
-    restart: unless-stopped
-
-  # ===========================================================================
-  # 5. FRONTEND (React + Vite)
-  # ===========================================================================
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: museo-frontend
-    environment:
-      - VITE_API_URL=http://localhost:8080
-    ports:
-      - "5173:5173"
-    depends_on:
-      - gateway
-    networks:
-      - museo-network
-    restart: unless-stopped
 
 volumes:
   museo-datos:
-
-networks:
-  museo-network:
-    driver: bridge
-    name: museo-network
-
-# =============================================================================
-# COMANDOS ÚTILES
-# =============================================================================
-#
-# Levantar todo el stack:
-#   docker compose up -d
-#
-# Ver logs:
-#   docker compose logs -f [servicio]
-#
-# Reconstruir y reiniciar:
-#   docker compose down -v && docker compose up -d --build
-#
-# URLs:
-#   - Frontend:  http://localhost:5173
-#   - Gateway:   http://localhost:8080
-#   - REST API:  http://localhost:8000
-#   - gRPC REST: http://localhost:9000 (envoy/echo)
-#   - Swagger:   http://localhost:8000/swagger-ui.html
-#   - GraphiQL:  http://localhost:8000/graphiql
-#   - MariaDB:   localhost:3306
-#
-# Puertos gRPC internos:
-#   - Spring Boot API: 9090
-#   - NestJS:          9091
-# =============================================================================

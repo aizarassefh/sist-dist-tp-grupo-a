@@ -13,12 +13,17 @@ import DetalleEvento from './pages/DetalleEvento'
 import EditarEvento from './pages/EditarEvento'
 import FiltrosFavoritos from './pages/FiltrosFavoritos'
 import ReporteAsistencia from './components/ReporteAsistencia'
+import Recorridos from './pages/Recorridos'
+import Comparar from './pages/Comparar'
+import Recomendaciones from './pages/Recomendaciones'
+import Explorar from './pages/Explorar'
+import ExplorarMovimiento from './pages/ExplorarMovimiento'
 import Home from './components/Home'
 import Login from './components/Login'
 import Registro from './components/Registro'
 import RequiereRol from './components/RequiereRol'
 import { borrarToken, EVENTO_SESION_VENCIDA, obtenerToken, pedir } from './api/cliente'
-import { ROLES, esGestor } from './roles'
+import { ROLES, esGestor, tieneRol } from './roles'
 
 function Navegacion({ user, onLogout }) {
   return (
@@ -58,6 +63,38 @@ function Navegacion({ user, onLogout }) {
           className="navegacion-link"
         >
           Mis filtros
+        </NavLink>
+
+        {tieneRol(user, ROLES.VISITANTE) && (
+          <NavLink
+            to="/recorridos"
+            className="navegacion-link"
+          >
+            Recorridos
+          </NavLink>
+        )}
+
+        <NavLink
+          to="/comparar"
+          className="navegacion-link"
+        >
+          Comparar
+        </NavLink>
+
+        {tieneRol(user, ROLES.VISITANTE) && (
+          <NavLink
+            to="/recomendaciones"
+            className="navegacion-link"
+          >
+            Recomendaciones
+          </NavLink>
+        )}
+
+        <NavLink
+          to="/explorar"
+          className="navegacion-link"
+        >
+          Explorar
         </NavLink>
 
         {esGestor(user) && (
@@ -193,7 +230,7 @@ function App() {
 
         <Route
           path="/obra/:id"
-          element={<DetalleObra />}
+          element={<DetalleObra usuario={user} />}
         />
 
         <Route
@@ -233,6 +270,45 @@ function App() {
         <Route
           path="/favoritos"
           element={<FiltrosFavoritos />}
+        />
+
+        <Route
+          path="/recorridos"
+          element={
+            <RequiereRol
+              usuario={user}
+              roles={[ROLES.VISITANTE]}
+            >
+              <Recorridos />
+            </RequiereRol>
+          }
+        />
+
+        <Route
+          path="/comparar"
+          element={<Comparar />}
+        />
+
+        <Route
+          path="/recomendaciones"
+          element={
+            <RequiereRol
+              usuario={user}
+              roles={[ROLES.VISITANTE]}
+            >
+              <Recomendaciones />
+            </RequiereRol>
+          }
+        />
+
+        <Route
+          path="/explorar"
+          element={<Explorar />}
+        />
+
+        <Route
+          path="/explorar/:movimiento"
+          element={<ExplorarMovimiento />}
         />
 
         <Route

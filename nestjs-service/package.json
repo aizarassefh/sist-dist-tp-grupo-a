@@ -1,7 +1,7 @@
 {
   "name": "nestjs-museo-service",
   "version": "1.0.0",
-  "description": "Servicio NestJS para el Museo Virtual - Sistema de Recomendaciones y Preferencias",
+  "description": "Motor de experiencias del Museo Virtual: recorridos, recomendaciones y comparaciones por gRPC",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
@@ -24,13 +24,11 @@
     "rxjs": "^7.8.1",
     "class-validator": "^0.14.1",
     "class-transformer": "^0.5.1",
-    "dotenv": "^16.4.1",
-    "uuid": "^9.0.1"
+    "dotenv": "^16.4.1"
   },
   "devDependencies": {
     "@nestjs/testing": "^10.3.0",
     "@types/node": "^20.11.7",
-    "@types/uuid": "^9.0.8",
     "typescript": "^5.3.3",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
@@ -44,5 +42,13 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "rootDir": ".",
+    "testMatch": [
+      "<rootDir>/test/**/*.spec.ts"
+    ]
   }
 }

@@ -1,298 +1,140 @@
 package com.unla.museo.usuarios.grpc.service;
 
-import com.unla.museo.catalogo.entity.ObraEntity;
-import com.unla.museo.catalogo.repository.ObraRepository;
+import com.unla.museo.comun.GrpcRespuestas;
 import com.unla.museo.seguridad.entity.UsuarioEntity;
 import com.unla.museo.seguridad.repository.UsuarioRepository;
-import com.unla.museo.usuarios.grpc.*;
+import com.unla.museo.usuarios.entity.InteraccionUsuario;
+import com.unla.museo.usuarios.entity.InteraccionUsuario.TipoInteraccion;
+import com.unla.museo.usuarios.entity.PreferenciasUsuario;
+import com.unla.museo.usuarios.grpc.ActualizarPreferenciasRequest;
+import com.unla.museo.usuarios.grpc.Interaccion;
+import com.unla.museo.usuarios.grpc.InteraccionesResponse;
+import com.unla.museo.usuarios.grpc.Perfil;
+import com.unla.museo.usuarios.grpc.PerfilRequest;
+import com.unla.museo.usuarios.grpc.Preferencias;
+import com.unla.museo.usuarios.grpc.RegistrarInteraccionRequest;
+import com.unla.museo.usuarios.grpc.UsuariosServiceGrpc;
+import com.unla.museo.usuarios.grpc.mapper.UsuariosGrpcMapper;
 import com.unla.museo.usuarios.repository.InteraccionUsuarioRepository;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-/**
- * Servicio gRPC para la gestión de Usuarios y Preferencias.
- * Implementa el contrato definido en usuarios.proto
- */
+// Transacción de solo lectura a nivel de clase: gRPC corre fuera de un request
+// web, y sin transacción leer una relación LAZY tira LazyInitializationException.
 @GrpcService
+@Transactional(readOnly = true)
 public class UsuariosGrpcService extends UsuariosServiceGrpc.UsuariosServiceImplBase {
 
     private final UsuarioRepository usuarioRepository;
     private final InteraccionUsuarioRepository interaccionRepository;
-    private final ObraRepository obraRepository;
+    private final Clock clock;
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-
-    public UsuariosGrpcService(UsuarioRepository usuarioRepository,
-                                InteraccionUsuarioRepository interaccionRepository,
-                                ObraRepository obraRepository) {
+    public UsuariosGrpcService(@Qualifier("UsuarioSQLRepositoryImpl") UsuarioRepository usuarioRepository,
+                               InteraccionUsuarioRepository interaccionRepository, Clock clock) {
         this.usuarioRepository = usuarioRepository;
-        this.obraRepository = obraRepository;
         this.interaccionRepository = interaccionRepository;
+        this.clock = clock;
     }
 
     @Override
-    public void obtenerUsuario(ObtenerUsuarioRequest request,
-                                StreamObserver<Usuario> responseObserver) {
-        Optional<UsuarioEntity> usuarioOpt;
-
-        if (request.getId() > 0) {
-            usuarioOpt = usuarioRepository.findById(request.getId());
-        } else if (!request.getEmail().isEmpty()) {
-            usuarioOpt = usuarioRepository.findByEmail(request.getEmail());
-        } else {
-            responseObserver.onError(
-                io.grpc.Status.INVALID_ARGUMENT
-                    .withDescription("Debe proporcionar id o email")
-                    .asRuntimeException()
-            );
-            return;
-        }
-
-        if (usuarioOpt.isPresent()) {
-            responseObserver.onNext(convertToUsuarioProto(usuarioOpt.get()));
-            responseObserver.onCompleted();
-        } else {
-            responseObserver.onError(
-                io.grpc.Status.NOT_FOUND
-                    .withDescription("Usuario no encontrado")
-                    .asRuntimeException()
-            );
-        }
+    public void obtenerPerfil(PerfilRequest pedido, StreamObserver<Perfil> respuesta) {
+        GrpcRespuestas.responder(respuesta, () -> UsuariosGrpcMapper.aPerfil(buscarUsuario(pedido.getEmail())));
     }
 
     @Override
-    public void actualizarPreferencias(ActualizarPreferenciasRequest request,
-                                       StreamObserver<Usuario> responseObserver) {
-        Optional<UsuarioEntity> usuarioOpt = usuarioRepository.findById(request.getUsuarioId());
+    @Transactional
+    public void actualizarPreferencias(ActualizarPreferenciasRequest pedido, StreamObserver<Perfil> respuesta) {
+        GrpcRespuestas.responder(respuesta, () -> actualizarPreferencias(pedido));
+    }
 
-        if (usuarioOpt.isEmpty()) {
-            responseObserver.onError(
-                io.grpc.Status.NOT_FOUND
-                    .withDescription("Usuario no encontrado: " + request.getUsuarioId())
-                    .asRuntimeException()
-            );
-            return;
-        }
+    private Perfil actualizarPreferencias(ActualizarPreferenciasRequest pedido) {
+        UsuarioEntity usuario = buscarUsuario(pedido.getEmail());
+        Preferencias nuevas = pedido.getPreferencias();
 
-        UsuarioEntity usuario = usuarioOpt.get();
+        // Se vacían y rellenan las listas existentes en lugar de reemplazarlas:
+        // Hibernate rastrea la colección original y así genera el delete/insert justo.
+        PreferenciasUsuario preferencias = usuario.getPreferencias();
+        reemplazar(preferencias.getMovimientos(), nuevas.getMovimientosList());
+        reemplazar(preferencias.getTecnicas(), nuevas.getTecnicasList());
+        reemplazar(preferencias.getTematicas(), nuevas.getTematicasList());
+        usuario.setPreferencias(preferencias);
 
-        // Actualizar preferencias
-        usuario.getPreferencias().setEstilosFavoritos(
-            request.getEstilosFavoritosList()
-        );
-        usuario.getPreferencias().setTecnicasFavoritas(
-            request.getTecnicasFavoritasList()
-        );
-        usuario.getPreferencias().setArtistasFavoritos(
-            request.getArtistasFavoritosList()
-        );
-        usuario.getPreferencias().setTemasInteres(
-            request.getTemasInteresList()
-        );
-
-        usuarioRepository.save(usuario);
-
-        responseObserver.onNext(convertToUsuarioProto(usuario));
-        responseObserver.onCompleted();
+        return UsuariosGrpcMapper.aPerfil(usuarioRepository.save(usuario));
     }
 
     @Override
-    public void obtenerPreferencias(ObtenerPreferenciasRequest request,
-                                    StreamObserver<PreferenciasUsuario> responseObserver) {
-        Optional<UsuarioEntity> usuarioOpt = usuarioRepository.findById(request.getUsuarioId());
+    @Transactional
+    public void registrarInteraccion(RegistrarInteraccionRequest pedido, StreamObserver<Interaccion> respuesta) {
+        GrpcRespuestas.responder(respuesta, () -> registrarInteraccion(pedido));
+    }
 
-        if (usuarioOpt.isEmpty()) {
-            responseObserver.onError(
-                io.grpc.Status.NOT_FOUND
-                    .withDescription("Usuario no encontrado: " + request.getUsuarioId())
-                    .asRuntimeException()
-            );
-            return;
+    private Interaccion registrarInteraccion(RegistrarInteraccionRequest pedido) {
+        TipoInteraccion tipo = parsearTipo(pedido.getTipo());
+        if (pedido.getObraId() <= 0) {
+            throw Status.INVALID_ARGUMENT.withDescription("El id de obra debe ser mayor que cero").asRuntimeException();
         }
+        UsuarioEntity usuario = buscarUsuario(pedido.getEmail());
 
-        PreferenciasUsuario preferencias = convertToPreferenciasProto(
-            usuarioOpt.get().getPreferencias()
-        );
+        InteraccionUsuario interaccion = new InteraccionUsuario();
+        interaccion.setUsuario(usuario);
+        interaccion.setObraId(pedido.getObraId());
+        interaccion.setTipo(tipo);
+        interaccion.setFecha(LocalDateTime.now(clock));
 
-        responseObserver.onNext(preferencias);
-        responseObserver.onCompleted();
+        return UsuariosGrpcMapper.aInteraccion(interaccionRepository.save(interaccion));
     }
 
     @Override
-    public void registrarInteraccion(RegistrarInteraccionRequest request,
-                                    StreamObserver<InteraccionResponse> responseObserver) {
+    public void listarInteracciones(PerfilRequest pedido, StreamObserver<InteraccionesResponse> respuesta) {
+        GrpcRespuestas.responder(respuesta, () -> listarInteracciones(pedido));
+    }
+
+    private InteraccionesResponse listarInteracciones(PerfilRequest pedido) {
+        UsuarioEntity usuario = buscarUsuario(pedido.getEmail());
+        InteraccionesResponse.Builder resultado = InteraccionesResponse.newBuilder();
+        for (InteraccionUsuario i : interaccionRepository.findByUsuarioIdOrderByFechaDescIdDesc(usuario.getId())) {
+            resultado.addInteracciones(UsuariosGrpcMapper.aInteraccion(i));
+        }
+        return resultado.build();
+    }
+
+    private UsuarioEntity buscarUsuario(String email) {
+        String limpio = email.trim();
+        if (limpio.isEmpty()) {
+            throw Status.INVALID_ARGUMENT.withDescription("Hay que indicar el email del usuario").asRuntimeException();
+        }
+        return usuarioRepository.findByEmail(limpio)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("No existe el usuario con email " + limpio)
+                        .asRuntimeException());
+    }
+
+    private static TipoInteraccion parsearTipo(String tipo) {
         try {
-            Optional<com.unla.museo.seguridad.entity.UsuarioEntity> usuarioOpt =
-                usuarioRepository.findById(request.getUsuarioId());
+            return TipoInteraccion.valueOf(tipo.trim());
+        } catch (IllegalArgumentException e) {
+            throw Status.INVALID_ARGUMENT
+                    .withDescription("Tipo de interacción desconocido: '" + tipo + "' (se espera VISTA o INTERES)")
+                    .asRuntimeException();
+        }
+    }
 
-            Optional<ObraEntity> obraOpt =
-                    obraRepository
-                    .findById(request.getObraId());
-
-            if (usuarioOpt.isEmpty()) {
-                responseObserver.onError(
-                    io.grpc.Status.NOT_FOUND
-                        .withDescription("Usuario no encontrado: " + request.getUsuarioId())
-                        .asRuntimeException()
-                );
-                return;
+    // Sin repetidos ni vacíos, conservando el orden en que llegaron.
+    private static void reemplazar(List<String> destino, List<String> valores) {
+        LinkedHashSet<String> limpios = new LinkedHashSet<>();
+        for (String valor : valores) {
+            if (!valor.isBlank()) {
+                limpios.add(valor.trim());
             }
-
-            com.unla.museo.usuarios.entity.InteraccionUsuario interaccion =
-                new com.unla.museo.usuarios.entity.InteraccionUsuario();
-            interaccion.setUsuario(usuarioOpt.get());
-            if (obraOpt.isPresent()) {
-                interaccion.setObra(obraOpt.get());
-            }
-            interaccion.setTipoInteraccion(
-                com.unla.museo.usuarios.entity.InteraccionUsuario.TipoInteraccion
-                    .valueOf(request.getTipoInteraccion().toUpperCase())
-            );
-            interaccion.setFechaInteraccion(LocalDateTime.now());
-            interaccion.setDuracionSegundos(request.getDuracionSegundos());
-
-            interaccionRepository.save(interaccion);
-
-            // Incrementar visitas si es una visita
-            if (interaccion.getTipoInteraccion() ==
-                com.unla.museo.usuarios.entity.InteraccionUsuario.TipoInteraccion.VISITA
-                && obraOpt.isPresent()) {
-                obraOpt.get().incrementarVisitas();
-            }
-
-            InteraccionResponse response = InteraccionResponse.newBuilder()
-                .setExito(true)
-                .setMensaje("Interacción registrada correctamente")
-                .build();
-
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-        } catch (Exception e) {
-            responseObserver.onError(
-                io.grpc.Status.INTERNAL
-                    .withDescription("Error al registrar interacción: " + e.getMessage())
-                    .asRuntimeException()
-            );
         }
-    }
-
-    @Override
-    public void obtenerHistorialVisitas(ObtenerHistorialRequest request,
-                                        StreamObserver<HistorialVisitasResponse> responseObserver) {
-        List<com.unla.museo.usuarios.entity.InteraccionUsuario> interacciones;
-
-        if (request.getDiasAtras() > 0) {
-            LocalDateTime desde = LocalDateTime.now().minusDays(request.getDiasAtras());
-            interacciones = interaccionRepository.findByUsuarioIdDesde(request.getUsuarioId(), desde);
-        } else {
-            interacciones = interaccionRepository.findByUsuarioIdOrderByFechaInteraccionDesc(request.getUsuarioId());
-        }
-
-        List<InteraccionUsuario> interaccionesProto = interacciones.stream()
-            .map(this::convertToInteraccionProto)
-            .collect(Collectors.toList());
-
-        HistorialVisitasResponse response = HistorialVisitasResponse.newBuilder()
-            .addAllInteracciones(interaccionesProto)
-            .setTotal(interacciones.size())
-            .build();
-
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
-    }
-
-    @Override
-    public void obtenerObrasFavoritas(ObtenerObrasFavoritasRequest request,
-                                      StreamObserver<ObrasFavoritasResponse> responseObserver) {
-        Optional<com.unla.museo.seguridad.entity.UsuarioEntity> usuarioOpt =
-            usuarioRepository.findById(request.getUsuarioId());
-
-        if (usuarioOpt.isEmpty()) {
-            ObrasFavoritasResponse response = ObrasFavoritasResponse.newBuilder().build();
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-            return;
-        }
-
-        // Obtener las obras favoritas del usuario
-        List<Long> obraIds = interaccionRepository.findObrasFavoritasByUsuarioId(request.getUsuarioId());
-
-        ObrasFavoritasResponse response = ObrasFavoritasResponse.newBuilder()
-            .addAllObraIds(obraIds)
-            .build();
-
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
-    }
-
-    // Métodos auxiliares de conversión
-    private Usuario convertToUsuarioProto(UsuarioEntity entity) {
-        Usuario.Builder builder = Usuario.newBuilder()
-            .setId(entity.getId())
-            .setEmail(entity.getEmail())
-            .setNombre(entity.getNombre())
-            .setApellido(entity.getApellido())
-            .setRol(entity.getRol().getNombre());
-
-        if (entity.getPreferencias() != null) {
-            builder.setPreferencias(convertToPreferenciasProto(entity.getPreferencias()));
-        }
-
-        if (entity.getFechaRegistro() != null) {
-            builder.setFechaRegistro(entity.getFechaRegistro().format(DATE_FORMATTER));
-        }
-
-        return builder.build();
-    }
-
-    private PreferenciasUsuario convertToPreferenciasProto(
-            com.unla.museo.usuarios.entity.PreferenciasUsuario entity) {
-        PreferenciasUsuario.Builder builder = PreferenciasUsuario.newBuilder();
-
-        if (entity.getEstilosFavoritos() != null) {
-            builder.addAllEstilosFavoritos(entity.getEstilosFavoritos());
-        }
-        if (entity.getTecnicasFavoritas() != null) {
-            builder.addAllTecnicasFavoritas(entity.getTecnicasFavoritas());
-        }
-        if (entity.getArtistasFavoritos() != null) {
-            builder.addAllArtistasFavoritos(entity.getArtistasFavoritos());
-        }
-        if (entity.getTemasInteres() != null) {
-            builder.addAllTemasInteres(entity.getTemasInteres());
-        }
-        if (entity.getUmbralCalificacion() != null) {
-            builder.setUmbralCalificacion(entity.getUmbralCalificacion());
-        }
-
-        return builder.build();
-    }
-
-    private InteraccionUsuario convertToInteraccionProto(
-            com.unla.museo.usuarios.entity.InteraccionUsuario entity) {
-        InteraccionUsuario.Builder builder = InteraccionUsuario.newBuilder()
-            .setId(entity.getId())
-            .setUsuarioId(entity.getUsuario() != null ? entity.getUsuario().getId() : 0L);
-
-        if (entity.getObra() != null) {
-            builder.setObraId(entity.getObra().getId());
-        }
-        if (entity.getTipoInteraccion() != null) {
-            builder.setTipoInteraccion(entity.getTipoInteraccion().name());
-        }
-        if (entity.getFechaInteraccion() != null) {
-            builder.setFecha(entity.getFechaInteraccion().format(DATE_FORMATTER));
-        }
-        if (entity.getDuracionSegundos() != null) {
-            builder.setDuracionSegundos(entity.getDuracionSegundos());
-        }
-
-        return builder.build();
+        destino.clear();
+        destino.addAll(limpios);
     }
 }

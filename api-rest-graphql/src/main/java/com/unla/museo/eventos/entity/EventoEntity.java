@@ -1,6 +1,5 @@
 package com.unla.museo.eventos.entity;
 
-import com.unla.museo.eventos.util.EstadoEvento;
 import com.unla.museo.eventos.util.TipoEvento;
 import com.unla.museo.seguridad.entity.UsuarioEntity;
 import jakarta.persistence.*;
@@ -47,57 +46,19 @@ public class EventoEntity {
     @JoinColumn(name = "CURADOR_ID", nullable = false)
     private UsuarioEntity curador;
 
-    @Column(name = "UBICACION", length = 200)
-    private String ubicacion;
+    // Movimiento artístico al que se vincula el evento (nullable): lo consume
+    // el motor de recomendaciones vía EventosService.
+    @Column(name = "MOVIMIENTO", length = 100)
+    private String movimiento;
 
+    // Sin uso en el dominio, pero se mantiene: en las bases que corrieron la
+    // primera versión de la rama gRPC la columna quedó NOT NULL sin default, y
+    // sin este campo los INSERT de eventos (REST, Entrega 1) fallarían.
     @Column(name = "ACTIVO", nullable = false)
     private boolean activo = true;
-
-    @Column(name = "INSCRIPCIONES_ACTUALES")
-    private Integer inscripcionesActuales = 0;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "ESTADO", length = 50)
-    private EstadoEvento estado = EstadoEvento.PLANIFICADO;
 
     // cascade ALL + orphanRemoval: borrar el evento borra sus inscripciones
     // (se eligió en lugar de rechazar el borrado de un evento con inscriptos).
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InscripcionEntity> inscripciones = new ArrayList<>();
-
-    /**
-     * Alias para cupoMaximo (usado por proto)
-     */
-    public Integer getCapacidadMaxima() {
-        return cupoMaximo;
-    }
-
-    public void setCapacidadMaxima(Integer capMax) {
-        this.cupoMaximo = capMax;
-    }
-
-    /**
-     * Alias para fechaHora (usado por proto)
-     */
-    public LocalDateTime getFechaInicio() {
-        return fechaHora;
-    }
-
-    public void setFechaInicio(LocalDateTime fechaInicio) {
-        this.fechaHora = fechaInicio;
-    }
-
-    /**
-     * Fecha fin calculada (fechaInicio + duracion)
-     */
-    public LocalDateTime getFechaFin() {
-        if (fechaHora != null && duracionMinutos != null) {
-            return fechaHora.plusMinutes(duracionMinutos);
-        }
-        return fechaHora;
-    }
-
-    public void setFechaFin(LocalDateTime fechaFin) {
-        // Se calcula automáticamente, no se almacena
-    }
 }

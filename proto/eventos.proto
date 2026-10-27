@@ -6,123 +6,39 @@ option java_multiple_files = true;
 option java_package = "com.unla.museo.eventos.grpc";
 option java_outer_classname = "EventosProto";
 
-// Servicio de Eventos e Inscripciones
+// Servicio de dominio de eventos: dueño de las tablas eventos e inscripciones.
+// Lo implementa el módulo eventos del backend Java. Solo lectura: la gestión
+// de eventos e inscripciones sigue por REST (Entrega 1).
 service EventosService {
-  // Gestión de eventos
-  rpc ListarEventos(ListarEventosRequest) returns (ListarEventosResponse);
-  rpc ObtenerEvento(ObtenerEventoRequest) returns (Evento);
-  rpc CrearEvento(CrearEventoRequest) returns (Evento);
-  rpc ActualizarEvento(ActualizarEventoRequest) returns (Evento);
+  // Eventos vinculados a un movimiento artístico, por fecha ascendente.
+  rpc ListarEventosPorMovimiento(EventosPorMovimientoRequest) returns (EventosResponse);
 
-  // Inscripciones
-  rpc InscribirUsuario(InscribirUsuarioRequest) returns (Inscripcion);
-  rpc CancelarInscripcion(CancelarInscripcionRequest) returns (InscripcionResponse);
-  rpc ListarInscripciones(ListarInscripcionesRequest) returns (ListarInscripcionesResponse);
-
-  // Reportes
-  rpc GenerarReporteAsistencia(ReporteRequest) returns (ReporteAsistencia);
+  // Eventos a los que se inscribió un usuario (señal de interés para las
+  // recomendaciones).
+  rpc ListarEventosDeUsuario(EventosDeUsuarioRequest) returns (EventosResponse);
 }
 
-// Mensajes
 message Evento {
   int64 id = 1;
   string titulo = 2;
   string descripcion = 3;
-  string tipo = 4;
-  string fecha_inicio = 5;
-  string fecha_fin = 6;
-  string ubicacion = 7;
-  int32 capacidad_maxima = 8;
-  int32 inscripciones_actuales = 9;
-  bool activo = 10;
-  int64 creado_por = 11;
+  string tipo = 4;            // VISITA_GUIADA | TALLER | CHARLA
+  string fecha_hora = 5;      // ISO 8601 local, ej. 2026-11-05T18:00:00
+  int32 duracion_minutos = 6;
+  int32 cupo_maximo = 7;
+  int32 inscriptos = 8;
+  string movimiento = 9;      // Vacío si el evento no está vinculado a uno
 }
 
-message Inscripcion {
-  int64 id = 1;
-  int64 evento_id = 2;
-  int64 usuario_id = 3;
-  string fecha_inscripcion = 4;
-  string estado = 5; // CONFIRMADA, CANCELADA, ASISTIO
-  bool asistencia = 6;
+message EventosPorMovimientoRequest {
+  string movimiento = 1;
+  bool solo_futuros = 2;
 }
 
-message ReporteAsistencia {
-  int64 evento_id = 1;
-  string titulo_evento = 2;
-  int32 total_inscritos = 3;
-  int32 total_asistentes = 4;
-  double tasa_asistencia = 5;
-  string fecha_generacion = 6;
+message EventosDeUsuarioRequest {
+  string email = 1;
 }
 
-// Requests y Responses
-message ListarEventosRequest {
-  string tipo = 1;
-  string fecha_desde = 2;
-  string fecha_hasta = 3;
-  bool solo_activos = 4;
-  int32 pagina = 5;
-  int32 tamano = 6;
-}
-
-message ListarEventosResponse {
+message EventosResponse {
   repeated Evento eventos = 1;
-  int32 total = 2;
-}
-
-message ObtenerEventoRequest {
-  int64 id = 1;
-}
-
-message CrearEventoRequest {
-  string titulo = 1;
-  string descripcion = 2;
-  string tipo = 3;
-  string fecha_inicio = 4;
-  string fecha_fin = 5;
-  string ubicacion = 6;
-  int32 capacidad_maxima = 7;
-  int64 creado_por = 8;
-}
-
-message ActualizarEventoRequest {
-  int64 id = 1;
-  string titulo = 2;
-  string descripcion = 3;
-  string tipo = 4;
-  string fecha_inicio = 5;
-  string fecha_fin = 6;
-  string ubicacion = 7;
-  int32 capacidad_maxima = 8;
-  bool activo = 9;
-}
-
-message InscribirUsuarioRequest {
-  int64 evento_id = 1;
-  int64 usuario_id = 2;
-}
-
-message CancelarInscripcionRequest {
-  int64 inscripcion_id = 1;
-}
-
-message InscripcionResponse {
-  bool exito = 1;
-  string mensaje = 2;
-  Inscripcion inscripcion = 3;
-}
-
-message ListarInscripcionesRequest {
-  int64 evento_id = 1;
-  int64 usuario_id = 2;
-  string estado = 3;
-}
-
-message ListarInscripcionesResponse {
-  repeated Inscripcion inscripciones = 1;
-}
-
-message ReporteRequest {
-  int64 evento_id = 1;
 }

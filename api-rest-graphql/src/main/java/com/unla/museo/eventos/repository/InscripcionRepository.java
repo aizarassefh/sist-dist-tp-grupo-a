@@ -1,5 +1,6 @@
 package com.unla.museo.eventos.repository;
 
+import com.unla.museo.eventos.entity.EventoEntity;
 import com.unla.museo.eventos.entity.InscripcionEntity;
 import com.unla.museo.eventos.entity.util.ConteoPorEvento;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -34,4 +35,12 @@ public interface InscripcionRepository extends JpaRepository<InscripcionEntity, 
             where i.evento.id in :eventoIds and i.usuario.id = :usuarioId
             """)
     List<Long> buscarEventoIdsInscriptoDeUsuario(@Param("eventoIds") List<Long> eventoIds, @Param("usuarioId") Long usuarioId);
+
+    // Por email y no por id: es lo que identifica al usuario en el gateway (claim sub del JWT).
+    @Query("""
+            select i.evento from InscripcionEntity i
+            where i.usuario.email = :email
+            order by i.evento.fechaHora, i.evento.id
+            """)
+    List<EventoEntity> buscarEventosDeUsuarioPorEmail(@Param("email") String email);
 }

@@ -76,4 +76,13 @@ public interface EventoRepository extends JpaRepository<EventoEntity, Long> {
                                                         @Param("filtrarPasados") boolean filtrarPasados,
                                                         @Param("filtrarFuturos") boolean filtrarFuturos,
                                                         @Param("ahora") LocalDateTime ahora);
+
+    // Los datos de ejemplo se completan por título: sirve para no duplicar
+    // eventos en una base que ya los tenía.
+    Optional<EventoEntity> findFirstByTitulo(String titulo);
+
+    // Comparación de movimiento en minúsculas; el acento lo resuelve el servicio
+    // gRPC (ver EventosGrpcService), por eso se trae por movimiento no nulo.
+    @Query("select e from EventoEntity e where e.movimiento is not null order by e.fechaHora, e.id")
+    List<EventoEntity> listarConMovimiento();
 }

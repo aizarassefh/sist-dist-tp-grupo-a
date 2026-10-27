@@ -1,21 +1,36 @@
 package com.unla.museo.usuarios.entity;
 
-import com.unla.museo.catalogo.entity.ObraEntity;
-import com.unla.museo.eventos.entity.EventoEntity;
 import com.unla.museo.seguridad.entity.UsuarioEntity;
-import jakarta.persistence.*;
-import lombok.Data;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 /**
- * Entidad que representa una interacción del usuario con el sistema.
- * Almacena el historial de visitas, favoritos, valoraciones y otras interacciones.
+ * Señal de interés de un visitante sobre una obra. obraId es un Long plano y
+ * no una relación JPA: la tabla obras es del módulo catálogo y usuarios no
+ * debe depender de ella (misma decisión que filtros_favorito.curador_id).
  */
 @Entity
-@Table(name = "interacciones_usuario")
-@Data
+// Nombre distinto al de la primera versión de la rama gRPC: aquellas tablas
+// tenían otras columnas (un ENUM con otros valores, columnas NOT NULL) y
+// ddl-auto=update no las corrige; con un nombre nuevo Hibernate las crea
+// bien también en las bases de desarrollo que ya corrieron esa versión.
+@Table(name = "interacciones_visitante")
+@Getter
+@Setter
 @NoArgsConstructor
 public class InteraccionUsuario {
 
@@ -27,38 +42,18 @@ public class InteraccionUsuario {
     @JoinColumn(name = "USUARIO_ID", nullable = false)
     private UsuarioEntity usuario;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "OBRA_ID")
-    private ObraEntity obra;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "EVENTO_ID")
-    private EventoEntity evento;
+    @Column(name = "OBRA_ID", nullable = false)
+    private Long obraId;
 
     @Column(name = "TIPO_INTERACCION", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
-    private TipoInteraccion tipoInteraccion;
+    private TipoInteraccion tipo;
 
     @Column(name = "FECHA_INTERACCION", nullable = false)
-    private LocalDateTime fechaInteraccion;
-
-    @Column(name = "DURACION_SEGUNDOS")
-    private Integer duracionSegundos;
-
-    @Column(name = "VALORACION")
-    private Integer valoracion;
-
-    @Column(name = "COMENTARIO", length = 500)
-    private String comentario;
-
-    @Column(name = "DISPOSITIVO", length = 100)
-    private String dispositivo;
+    private LocalDateTime fecha;
 
     public enum TipoInteraccion {
-        VISITA,
-        FAVORITO,
-        VALORACION,
-        COMPARTIR,
-        COMENTARIO
+        VISTA,
+        INTERES
     }
 }

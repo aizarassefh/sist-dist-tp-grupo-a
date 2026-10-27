@@ -1,320 +1,162 @@
 package com.unla.museo.catalogo.grpc.service;
 
 import com.unla.museo.catalogo.entity.ArtistaEntity;
-import com.unla.museo.catalogo.entity.ComentarioEntity;
 import com.unla.museo.catalogo.entity.ObraEntity;
-import com.unla.museo.catalogo.grpc.*;
+import com.unla.museo.catalogo.grpc.ArtistasResponse;
+import com.unla.museo.catalogo.grpc.BuscarObrasRequest;
 import com.unla.museo.catalogo.grpc.CatalogoServiceGrpc;
+import com.unla.museo.catalogo.grpc.Categoria;
+import com.unla.museo.catalogo.grpc.CategoriasResponse;
+import com.unla.museo.catalogo.grpc.ListarArtistasRequest;
+import com.unla.museo.catalogo.grpc.ListarCategoriasRequest;
+import com.unla.museo.catalogo.grpc.ObrasResponse;
+import com.unla.museo.catalogo.grpc.ObtenerObrasRequest;
+import com.unla.museo.catalogo.grpc.mapper.CatalogoGrpcMapper;
 import com.unla.museo.catalogo.repository.ArtistaRepository;
-import com.unla.museo.catalogo.repository.ComentarioRepository;
 import com.unla.museo.catalogo.repository.ObraRepository;
+import com.unla.museo.comun.GrpcRespuestas;
+import com.unla.museo.comun.Textos;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
+import java.text.Collator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Servicio gRPC para el Catálogo de Obras y Artistas.
- * Expone operaciones CRUD y búsquedas sobre el catálogo del museo.
- */
-// gRPC atiende fuera de un request web: sin transacción abierta, leer una
-// relación LAZY (obra.getArtista()) tira LazyInitializationException.
+// Transacción de solo lectura a nivel de clase: gRPC corre fuera de un request
+// web, y sin transacción leer una relación LAZY tira LazyInitializationException.
 @GrpcService
 @Transactional(readOnly = true)
 public class CatalogoGrpcService extends CatalogoServiceGrpc.CatalogoServiceImplBase {
 
     private final ObraRepository obraRepository;
     private final ArtistaRepository artistaRepository;
-    private final ComentarioRepository comentarioRepository;
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-
-    public CatalogoGrpcService(ObraRepository obraRepository,
-                                ArtistaRepository artistaRepository,
-                                ComentarioRepository comentarioRepository) {
+    public CatalogoGrpcService(ObraRepository obraRepository, ArtistaRepository artistaRepository) {
         this.obraRepository = obraRepository;
         this.artistaRepository = artistaRepository;
-        this.comentarioRepository = comentarioRepository;
     }
 
     @Override
-    public void listarObras(ListarObrasRequest request,
-                            StreamObserver<ListarObrasResponse> responseObserver) {
-        int pagina = request.getPagina() > 0 ? request.getPagina() : 0;
-        int tamano = request.getTamano() > 0 ? request.getTamano() : 10;
-        String ordenarPor = request.getOrdenarPor().isEmpty() ? "id" : request.getOrdenarPor();
-        String orden = request.getOrden().isEmpty() ? "ASC" : request.getOrden();
+    public void buscarObras(BuscarObrasRequest pedido, StreamObserver<ObrasResponse> respuesta) {
+        GrpcRespuestas.responder(respuesta, () -> buscarObras(pedido));
+    }
 
-        List<ObraEntity> todasLasObras = obraRepository.findAll();
+    private ObrasResponse buscarObras(BuscarObrasRequest pedido) {
+        List<String> movimientos = normalizarLista(pedido.getMovimientosList());
+        List<String> tecnicas = normalizarLista(pedido.getTecnicasList());
+        List<String> tematicas = normalizarLista(pedido.getTematicasList());
 
-        // Aplicar ordenamiento
-        Comparator<ObraEntity> comparador = switch (ordenarPor.toLowerCase()) {
-            case "titulo" -> Comparator.comparing(ObraEntity::getTitulo);
-            case "anio" -> Comparator.comparing(ObraEntity::getAnio);
-            case "calificacion" -> Comparator.comparing(ObraEntity::getCalificacionPromedio);
-            case "visitas" -> Comparator.comparing(ObraEntity::getVisitas);
-            default -> Comparator.comparing(ObraEntity::getId);
-        };
-
-        if (orden.equalsIgnoreCase("DESC")) {
-            comparador = comparador.reversed();
+        ObrasResponse.Builder resultado = ObrasResponse.newBuilder();
+        for (ObraEntity obra : obraRepository.listarConArtista()) {
+            if (pedido.getSoloEnExhibicion() && !obra.isEnExhibicion()) {
+                continue;
+            }
+            if (!coincideExacto(movimientos, obra.getEpoca())
+                    || !coincideContiene(tecnicas, obra.getTecnica())
+                    || !coincideExacto(tematicas, obra.getTematica())) {
+                continue;
+            }
+            resultado.addObras(CatalogoGrpcMapper.aObra(obra));
         }
-
-        List<ObraEntity> obrasOrdenadas = todasLasObras.stream()
-            .sorted(comparador)
-            .collect(Collectors.toList());
-
-        int total = obrasOrdenadas.size();
-        int totalPaginas = (int) Math.ceil((double) total / tamano);
-
-        List<ObraEntity> obrasPaginadas = obrasOrdenadas.stream()
-            .skip((long) pagina * tamano)
-            .limit(tamano)
-            .collect(Collectors.toList());
-
-        ListarObrasResponse response = ListarObrasResponse.newBuilder()
-            .addAllObras(obrasPaginadas.stream()
-                .map(this::convertToObraProto)
-                .collect(Collectors.toList()))
-            .setTotal(total)
-            .setPagina(pagina)
-            .setTotalPaginas(totalPaginas)
-            .build();
-
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+        return resultado.build();
     }
 
     @Override
-    public void obtenerObra(ObtenerObraRequest request,
-                            StreamObserver<Obra> responseObserver) {
-        Optional<ObraEntity> obraOpt = obraRepository.findById(request.getId());
+    public void obtenerObras(ObtenerObrasRequest pedido, StreamObserver<ObrasResponse> respuesta) {
+        GrpcRespuestas.responder(respuesta, () -> obtenerObras(pedido));
+    }
 
-        if (obraOpt.isPresent()) {
-            Obra obra = convertToObraProto(obraOpt.get());
-            responseObserver.onNext(obra);
-            responseObserver.onCompleted();
-        } else {
-            responseObserver.onError(
-                io.grpc.Status.NOT_FOUND
-                    .withDescription("Obra no encontrada: " + request.getId())
-                    .asRuntimeException()
-            );
+    private ObrasResponse obtenerObras(ObtenerObrasRequest pedido) {
+        if (pedido.getIdsList().isEmpty()) {
+            throw Status.INVALID_ARGUMENT.withDescription("Hay que indicar al menos un id de obra")
+                    .asRuntimeException();
         }
+        Map<Long, ObraEntity> porId = obraRepository.buscarPorIdsConArtista(List.copyOf(pedido.getIdsList()))
+                .stream().collect(Collectors.toMap(ObraEntity::getId, Function.identity()));
+
+        // El orden del pedido se respeta porque el gateway arma recorridos y
+        // comparaciones donde la posición importa.
+        ObrasResponse.Builder resultado = ObrasResponse.newBuilder();
+        for (Long id : pedido.getIdsList()) {
+            ObraEntity obra = porId.get(id);
+            if (obra == null) {
+                throw Status.NOT_FOUND.withDescription("No existe la obra con id " + id).asRuntimeException();
+            }
+            resultado.addObras(CatalogoGrpcMapper.aObra(obra));
+        }
+        return resultado.build();
     }
 
     @Override
-    public void buscarObras(BuscarObrasRequest request,
-                            StreamObserver<BuscarObrasResponse> responseObserver) {
-        int pagina = request.getPagina() > 0 ? request.getPagina() : 0;
-        int tamano = request.getTamano() > 0 ? request.getTamano() : 10;
+    public void listarArtistas(ListarArtistasRequest pedido, StreamObserver<ArtistasResponse> respuesta) {
+        GrpcRespuestas.responder(respuesta, () -> listarArtistas(pedido));
+    }
 
-        List<ObraEntity> obras = obraRepository.findAll();
-
-        // Filtrar por consulta general
-        if (!request.getConsulta().isEmpty()) {
-            String query = request.getConsulta().toLowerCase();
-            obras = obras.stream()
-                .filter(o -> o.getTitulo().toLowerCase().contains(query) ||
-                            (o.getDescripcion() != null && o.getDescripcion().toLowerCase().contains(query)) ||
-                            (o.getTecnica() != null && o.getTecnica().toLowerCase().contains(query)) ||
-                            (o.getEstilo() != null && o.getEstilo().toLowerCase().contains(query)) ||
-                            (o.getArtista() != null && o.getArtista().getNombre().toLowerCase().contains(query)))
-                .collect(Collectors.toList());
+    private ArtistasResponse listarArtistas(ListarArtistasRequest pedido) {
+        Map<Long, Integer> obrasPorArtista = new HashMap<>();
+        for (ObraEntity obra : obraRepository.listarConArtista()) {
+            obrasPorArtista.merge(obra.getArtista().getId(), 1, Integer::sum);
         }
+        String movimiento = Textos.sinAcentos(pedido.getMovimiento());
 
-        // Filtrar por técnica
-        if (!request.getTecnica().isEmpty()) {
-            obras = obras.stream()
-                .filter(o -> o.getTecnica() != null &&
-                            o.getTecnica().equalsIgnoreCase(request.getTecnica()))
-                .collect(Collectors.toList());
+        ArtistasResponse.Builder resultado = ArtistasResponse.newBuilder();
+        for (ArtistaEntity artista : artistaRepository.findAll()) {
+            if (!movimiento.isEmpty() && !movimiento.equals(Textos.sinAcentos(artista.getMovimiento()))) {
+                continue;
+            }
+            resultado.addArtistas(CatalogoGrpcMapper.aArtista(artista, obrasPorArtista.getOrDefault(artista.getId(), 0)));
         }
-
-        // Filtrar por estilo
-        if (!request.getEstilo().isEmpty()) {
-            obras = obras.stream()
-                .filter(o -> o.getEstilo() != null &&
-                            o.getEstilo().equalsIgnoreCase(request.getEstilo()))
-                .collect(Collectors.toList());
-        }
-
-        // Filtrar por artista
-        if (request.getArtistaId() > 0) {
-            obras = obras.stream()
-                .filter(o -> o.getArtista() != null &&
-                            o.getArtista().getId().equals(request.getArtistaId()))
-                .collect(Collectors.toList());
-        }
-
-        int total = obras.size();
-
-        List<Obra> obrasPaginadas = obras.stream()
-            .skip((long) pagina * tamano)
-            .limit(tamano)
-            .map(this::convertToObraProto)
-            .collect(Collectors.toList());
-
-        BuscarObrasResponse response = BuscarObrasResponse.newBuilder()
-            .addAllObras(obrasPaginadas)
-            .setTotal(total)
-            .build();
-
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+        return resultado.build();
     }
 
     @Override
-    public void listarArtistas(ListarArtistasRequest request,
-                               StreamObserver<ListarArtistasResponse> responseObserver) {
-        int pagina = request.getPagina() > 0 ? request.getPagina() : 0;
-        int tamano = request.getTamano() > 0 ? request.getTamano() : 10;
-
-        List<ArtistaEntity> todosLosArtistas = artistaRepository.findAll();
-        int total = todosLosArtistas.size();
-
-        List<Artista> artistasPaginados = todosLosArtistas.stream()
-            .skip((long) pagina * tamano)
-            .limit(tamano)
-            .map(this::convertToArtistaProto)
-            .collect(Collectors.toList());
-
-        ListarArtistasResponse response = ListarArtistasResponse.newBuilder()
-            .addAllArtistas(artistasPaginados)
-            .setTotal(total)
-            .build();
-
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+    public void listarCategorias(ListarCategoriasRequest pedido, StreamObserver<CategoriasResponse> respuesta) {
+        GrpcRespuestas.responder(respuesta, () -> {
+            List<ObraEntity> obras = obraRepository.listarConArtista();
+            return CategoriasResponse.newBuilder()
+                    .addAllMovimientos(contar(obras, ObraEntity::getEpoca))
+                    .addAllTecnicas(contar(obras, ObraEntity::getTecnica))
+                    .addAllTematicas(contar(obras, ObraEntity::getTematica))
+                    .build();
+        });
     }
 
-    @Override
-    public void obtenerArtista(ObtenerArtistaRequest request,
-                                 StreamObserver<Artista> responseObserver) {
-        Optional<ArtistaEntity> artistaOpt = artistaRepository.findById(request.getId());
-
-        if (artistaOpt.isPresent()) {
-            Artista artista = convertToArtistaProto(artistaOpt.get());
-            responseObserver.onNext(artista);
-            responseObserver.onCompleted();
-        } else {
-            responseObserver.onError(
-                io.grpc.Status.NOT_FOUND
-                    .withDescription("Artista no encontrado: " + request.getId())
-                    .asRuntimeException()
-            );
+    private static List<Categoria> contar(List<ObraEntity> obras, Function<ObraEntity, String> campo) {
+        // Collator en español: un orden por código de carácter pondría "Óleo" después de "Temple".
+        Map<String, Integer> conteos = new TreeMap<>(Collator.getInstance(Locale.of("es", "AR")));
+        for (ObraEntity obra : obras) {
+            String valor = campo.apply(obra);
+            if (valor != null && !valor.isBlank()) {
+                conteos.merge(valor.trim(), 1, Integer::sum);
+            }
         }
+        return conteos.entrySet().stream()
+                .map(e -> Categoria.newBuilder().setNombre(e.getKey()).setCantidadObras(e.getValue()).build())
+                .toList();
     }
 
-    @Override
-    public void listarComentarios(ListarComentariosRequest request,
-                                  StreamObserver<ListarComentariosResponse> responseObserver) {
-        int pagina = request.getPagina() > 0 ? request.getPagina() : 0;
-        int tamano = request.getTamano() > 0 ? request.getTamano() : 10;
-
-        List<ComentarioEntity> comentarios = comentarioRepository
-            .findByObraId(request.getObraId());
-
-        int total = comentarios.size();
-
-        List<Comentario> comentariosPaginados = comentarios.stream()
-            .skip((long) pagina * tamano)
-            .limit(tamano)
-            .map(this::convertToComentarioProto)
-            .collect(Collectors.toList());
-
-        ListarComentariosResponse response = ListarComentariosResponse.newBuilder()
-            .addAllComentarios(comentariosPaginados)
-            .setTotal(total)
-            .build();
-
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+    // Las entradas en blanco se descartan: una lista [""] equivale a "sin filtro".
+    private static List<String> normalizarLista(List<String> valores) {
+        return valores.stream().map(Textos::sinAcentos).filter(v -> !v.isEmpty()).toList();
     }
 
-    @Override
-    @Transactional
-    public void crearComentario(CrearComentarioRequest request,
-                                StreamObserver<Comentario> responseObserver) {
-        ComentarioEntity comentario = new ComentarioEntity();
-        comentario.setTexto(request.getContenido());
-        comentario.setFecha(LocalDateTime.now());
-
-        ObraEntity obra = obraRepository.findById(request.getObraId()).orElse(null);
-        if (obra != null) {
-            comentario.setObra(obra);
-        }
-
-        // Guardar el comentario
-        ComentarioEntity guardado = comentarioRepository.save(comentario);
-
-        Comentario response = convertToComentarioProto(guardado);
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+    private static boolean coincideExacto(List<String> criterios, String valor) {
+        return criterios.isEmpty() || criterios.contains(Textos.sinAcentos(valor));
     }
 
-    // Métodos auxiliares de conversión
-    private Obra convertToObraProto(ObraEntity entity) {
-        Obra.Builder builder = Obra.newBuilder()
-            .setId(entity.getId())
-            .setTitulo(entity.getTitulo())
-            .setDescripcion(entity.getDescripcion() != null ? entity.getDescripcion() : "")
-            .setTecnica(entity.getTecnica() != null ? entity.getTecnica() : "")
-            .setEstilo(entity.getEstilo() != null ? entity.getEstilo() : "")
-            .setImagenUrl(entity.getImagenUrl() != null ? entity.getImagenUrl() : "")
-            .setAnio(entity.getAnio());
-
-        if (entity.getVisitas() != null) {
-            builder.setVisitas(entity.getVisitas());
+    private static boolean coincideContiene(List<String> criterios, String valor) {
+        if (criterios.isEmpty()) {
+            return true;
         }
-        if (entity.getCalificacionPromedio() != null) {
-            builder.setCalificacionPromedio(entity.getCalificacionPromedio());
-        }
-
-        if (entity.getArtista() != null) {
-            builder.setArtista(Artista.newBuilder()
-                .setId(entity.getArtista().getId())
-                .setNombre(entity.getArtista().getNombre())
-                .setNacionalidad(entity.getArtista().getNacionalidad() != null
-                    ? entity.getArtista().getNacionalidad() : "")
-                .build());
-        }
-
-        return builder.build();
-    }
-
-    private Artista convertToArtistaProto(ArtistaEntity entity) {
-        return Artista.newBuilder()
-            .setId(entity.getId())
-            .setNombre(entity.getNombre())
-            .setNacionalidad(entity.getNacionalidad() != null ? entity.getNacionalidad() : "")
-            .setBiografia(entity.getBiografia() != null ? entity.getBiografia() : "")
-            .setImagenUrl(entity.getImagenUrl() != null ? entity.getImagenUrl() : "")
-            .build();
-    }
-
-    private Comentario convertToComentarioProto(ComentarioEntity entity) {
-        Comentario.Builder builder = Comentario.newBuilder()
-            .setId(entity.getId())
-            .setContenido(entity.getTexto())
-            .setCalificacion(0); // La entidad no tiene calificación
-
-        if (entity.getObra() != null) {
-            builder.setObraId(entity.getObra().getId());
-        }
-        if (entity.getUsuario() != null) {
-            builder.setUsuarioId(entity.getUsuario().getId());
-        }
-        if (entity.getFecha() != null) {
-            builder.setFecha(entity.getFecha().format(DATE_FORMATTER));
-        }
-
-        return builder.build();
+        String normalizado = Textos.sinAcentos(valor);
+        return criterios.stream().anyMatch(normalizado::contains);
     }
 }

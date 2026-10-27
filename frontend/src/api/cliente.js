@@ -30,9 +30,12 @@ export function avisarSesionVencida() {
 }
 
 export class ErrorApi extends Error {
-  constructor(estado, mensaje) {
+  // "mensajeServidor" solo se completa cuando la llamada lo pide (el gateway
+  // de la Entrega 2): ahí el cuerpo del error sí trae el motivo real.
+  constructor(estado, mensaje, mensajeServidor) {
     super(mensaje)
     this.estado = estado
+    this.mensajeServidor = mensajeServidor
   }
 }
 
@@ -68,8 +71,22 @@ export function mensajeDeError(error, mensajesPropios = {}) {
  * @param {object} [opciones.cuerpo] se envía como JSON
  * @param {object} [opciones.parametros] query string; se omiten vacíos y null
  * @param {boolean} [opciones.comoArchivo] devuelve un Blob, para descargas
+ * @param {string} [opciones.base] URL base; por defecto el backend REST. El
+ *   gateway de la Entrega 2 la cambia para reusar token y manejo de sesión.
+ * @param {boolean} [opciones.conMensajeServidor] en un error, lee el campo
+ *   "mensaje" del cuerpo y lo deja en ErrorApi.mensajeServidor
  */
-export async function pedir(ruta, { metodo = 'GET', cuerpo, parametros, comoArchivo = false } = {}) {
+export async function pedir(
+  ruta,
+  {
+    metodo = 'GET',
+    cuerpo,
+    parametros,
+    comoArchivo = false,
+    base = API_URL,
+    conMensajeServidor = false
+  } = {}
+) {
   const token = obtenerToken()
   const headers = {}
 
@@ -81,7 +98,7 @@ export async function pedir(ruta, { metodo = 'GET', cuerpo, parametros, comoArch
     headers['Content-Type'] = 'application/json'
   }
 
-  const respuesta = await fetch(API_URL + ruta + armarQuery(parametros), {
+  const respuesta = await fetch(base + ruta + armarQuery(parametros), {
     method: metodo,
     headers,
     body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
@@ -94,7 +111,8 @@ export async function pedir(ruta, { metodo = 'GET', cuerpo, parametros, comoArch
   }
 
   if (!respuesta.ok) {
-    throw new ErrorApi(respuesta.status, `HTTP ${respuesta.status}`)
+    const mensajeServidor = conMensajeServidor ? await leerMensajeDeError(respuesta) : undefined
+    throw new ErrorApi(respuesta.status, `HTTP ${respuesta.status}`, mensajeServidor)
   }
 
   if (comoArchivo) {
@@ -112,6 +130,16 @@ export async function pedir(ruta, { metodo = 'GET', cuerpo, parametros, comoArch
     return JSON.parse(texto)
   } catch {
     return texto
+  }
+}
+
+async function leerMensajeDeError(respuesta) {
+  try {
+    const cuerpo = await respuesta.json()
+    return typeof cuerpo?.mensaje === 'string' ? cuerpo.mensaje : undefined
+  } catch {
+    // Un proxy o un corte puede devolver HTML o nada: se cae al mensaje por código.
+    return undefined
   }
 }
 

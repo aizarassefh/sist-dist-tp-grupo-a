@@ -1,186 +1,121 @@
 # Museo Virtual Interactivo
 
-TP de Web Services — Desarrollo de Software en Sistemas Distribuidos, UNLa.
+TP de Desarrollo de Software en Sistemas Distribuidos, UNLa. Grupo A.
 
-Sistema de gestión para un museo virtual: catálogo de obras y reporte de
-asistencia por **GraphQL**; eventos, inscripciones, filtros favoritos,
-exportación a Excel y autenticación por **REST**, con JWT y permisos por rol
-(visitante, curador y administrador).
+- **Entrega 1 (Web Services):** catálogo de obras y reporte de asistencia por
+  **GraphQL**; eventos, inscripciones, filtros favoritos, exportación a Excel
+  y autenticación por **REST**, con JWT y permisos por rol (visitante, curador
+  y administrador).
+- **Entrega 2 (RPC):** recorridos personalizados, comparación de obras,
+  recomendaciones y exploración por movimiento, que entran por un **API
+  Gateway** y se resuelven con llamadas **gRPC** entre servicios.
 
-## Hito 2: Arquitectura gRPC (NUEVO)
+El documento de la Entrega 2 (estrategia, diagramas, servicios, contratos,
+modelo de datos, pruebas) está en
+[`docs/entrega-2/Entrega-2-Grupo-A.pdf`](docs/entrega-2/Entrega-2-Grupo-A.pdf).
 
-El proyecto ahora incluye una arquitectura de microservicios con **gRPC**:
-
-- **4 Nuevas Funcionalidades**: Recorridos Guiados, Comparación de Obras, Recomendaciones Personalizadas, Exploración del Catálogo
-- **Mezcla de Tecnologías**: Java (Spring Boot) + TypeScript (NestJS)
-- **Comunicación**: gRPC para servicios internos, REST para el frontend
-- **Arquitectura**: Spring Cloud Gateway como orquestador
-
-📖 **Ver documentación completa del Hito 2**: [README-GRPC.md](./README-GRPC.md)
-
-### Nueva Estructura del Proyecto
+## Estructura
 
 ```text
-api-rest-graphql/        Spring Boot + gRPC Server (puerto 9090) - Hito 1 compatible
-├── src/main/java/
-│   └── com/unla/museo/
-│       ├── catalogo/grpc/        # Catálogo via gRPC
-│       ├── usuarios/grpc/        # Usuarios via gRPC
-│       ├── eventos/grpc/         # Eventos via gRPC
-│       ├── recorridos/grpc/      # ✨ Recorridos (Hito 2)
-│       ├── comparacion/grpc/     # ✨ Comparación (Hito 2)
-│       ├── recomendaciones/grpc/ # ✨ Recomendaciones (Hito 2)
-│       └── exploracion/grpc/     # ✨ Exploración (Hito 2)
-│
-nestjs-service/            NestJS + gRPC (puerto 9091) - Tecnología diferente ✨
-├── src/
-│   ├── controllers/      # Recomendaciones & Usuarios
-│   └── services/         # Lógica de negocio
-│
-gateway/                 Spring Cloud Gateway (puerto 8080) ✨
-├── src/main/java/
-│   └── com/unla/museo/gateway/
-│       └── controller/
-│           ├── RecorridosController.java
-│           ├── ComparacionController.java
-│           ├── RecomendacionesController.java
-│           └── ExploracionController.java
-│
-proto/                   Contratos gRPC compartidos ✨
-├── catalogo.proto
-├── usuarios.proto
-├── eventos.proto
-├── recorridos.proto
-├── comparacion.proto
-├── recomendaciones.proto
-├── exploracion.proto
-├── gateway.proto
-└── common.proto
-│
-frontend/                React + Vite (sin cambios al API existente del Hito 1)
-docs/                    Documentación
-│
-docker-compose.yml       Orquestación de todos los servicios
+api-rest-graphql/   Backend Spring Boot: REST + GraphQL (Entrega 1, :8000) y
+                    servidor gRPC con CatalogoService, EventosService y
+                    UsuariosService (:9090)
+nestjs-service/     Motor de experiencias en NestJS/TypeScript: MotorService
+                    por gRPC (:9091). Recorridos, recomendaciones y comparación
+gateway/            API Gateway en Java/WebFlux (:8080): valida el JWT y
+                    orquesta las llamadas gRPC. Sin base ni lógica de negocio
+proto/              Contratos gRPC compartidos por Java y TypeScript
+frontend/           React + Vite (:5173)
+pruebas/e2e.mjs     Prueba de punta a punta contra todo levantado
+docs/               Contratos REST, colección de Postman y documento de entrega
 ```
-
-### Nuevos Endpoints del Hito 2 (via Gateway)
-
-| Funcionalidad | Endpoint | Descripción |
-|--------------|----------|-------------|
-| **Recorridos** | `POST /api/v2/recorridos/generar` | Genera recorrido personalizado |
-| **Comparación** | `GET /api/v2/comparar` | Compara dos obras |
-| **Recomendaciones** | `GET /api/v2/recomendaciones/personalizadas` | Sugerencias personalizadas |
-| **Exploración** | `POST /api/v2/explorar/espacio` | Vista espacial del catálogo |
-
-### Levantar todo el Hito 2 (Recomendado)
-
-```bash
-# Docker Compose - levanta todos los servicios
-docker compose up -d
-
-# URLs finales:
-# - Frontend:    http://localhost:5173
-# - Gateway:     http://localhost:8080 (punto único de entrada)
-# - Spring Boot: http://localhost:8000 (API original Hito 1)
-# - Swagger:     http://localhost:8000/swagger-ui.html
-# - GraphiQL:    http://localhost:8000/graphiql
-```
-
----
-
-## Estructura Original (Hito 1)
 
 ```text
-backend/     Spring Boot: API REST, API GraphQL y seguridad
-frontend/    React + Vite: las pantallas
-docs/        contrato de la API REST, colección de Postman y plan
-docker-compose.yml   MariaDB para desarrollo
+             ┌─ REST + GraphQL (Entrega 1) ─▶ backend :8000 ──┐
+React :5173 ─┤                                                 ├─ MariaDB
+             └─ REST /api/v2 (Entrega 2) ─▶ gateway :8080      │
+                                              │ gRPC           │
+                          ┌───────────────────┴──────┐         │
+                          ▼                          ▼         │
+             backend :9090 (Catalogo,       motor NestJS :9091 │
+             Eventos, Usuarios) ────────────────────────────────┘
 ```
 
 ## Cómo levantarlo
 
-Hace falta **Docker Desktop**, **JDK 21 o superior** y **Node 20.19+ o 22.12+**.
+Hace falta **JDK 21**, **Node 20.19+ o 22.12+** y **MariaDB 11.4** (con
+Docker o instalada). Cada componente va en su propia terminal, en este orden.
 
-### Opción 1: Docker Compose (todo automático)
+### 1. Base de datos
 
-```bash
-# Desde la raíz del proyecto
-docker compose up -d
+Con Docker, desde la raíz: `docker compose up -d`.
+
+Sin Docker: instalar MariaDB 11.4 desde
+[mariadb.org](https://mariadb.org/download/) (sirve el ZIP portable) y crear
+la base y el usuario que espera el backend:
+
+```sql
+CREATE DATABASE museodb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'museo'@'localhost' IDENTIFIED BY 'museo';
+GRANT ALL PRIVILEGES ON museodb.* TO 'museo'@'localhost';
 ```
 
-Esto levantará:
-- MariaDB (base de datos)
-- Spring Boot API (REST + gRPC en puerto 9090)
-- NestJS Service (gRPC en puerto 9091)
-- Spring Gateway (puerto 8080)
-- Frontend React (puerto 5173)
+Una base de la Entrega 1 sirve: al arrancar, el backend agrega las columnas y
+tablas nuevas y completa los datos de ejemplo que falten. Si la base corrió la
+primera versión de la rama gRPC, le quedan tablas sin uso
+(`preferencias_usuario`, `interacciones_usuario` y las de sus listas): no
+molestan y se pueden borrar.
 
-### Opción 2: Desarrollo local (paso a paso)
+### 2. Backend (REST + GraphQL + gRPC)
 
-1. **Base de datos**, desde la raíz del repo:
+```bash
+cd api-rest-graphql
+./mvnw spring-boot:run "-Dspring-boot.run.profiles=default"
+```
 
-   ```bash
-   docker compose up mariadb -d
-   ```
+En Windows con cmd o PowerShell: `mvnw.cmd`. Queda en `http://localhost:8000`
+(REST y GraphQL) y en `localhost:9090` (gRPC). La base se configura con
+`DB_URL`, `DB_USUARIO` y `DB_CLAVE`; por defecto
+`jdbc:mariadb://localhost:3306/museodb` con `museo`/`museo`.
 
-   **Sin Docker** (por ejemplo, si WSL no funciona en la PC): instalar
-   MariaDB 11.4 desde [mariadb.org](https://mariadb.org/download/), o usar
-   su ZIP portable, y crear la base y el usuario que espera el backend:
+El perfil `local` (el que se activa si no se indica otro) apunta a
+`root`/`root` en el 3306; usarlo solo si la base local está configurada así.
 
-   ```sql
-   CREATE DATABASE museodb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   CREATE USER 'museo'@'localhost' IDENTIFIED BY 'museo';
-   GRANT ALL PRIVILEGES ON museodb.* TO 'museo'@'localhost';
-   ```
+### 3. Motor NestJS
 
-   **Si ya tenías una base de una versión anterior** del proyecto, borrala y
-   creala de nuevo: el modelo de eventos cambió y Hibernate no convierte la
-   tabla vieja. Con Docker: `docker compose down -v` y `docker compose up -d`.
-   Sin Docker: `DROP DATABASE museodb;` y volver a correr el `CREATE DATABASE`
-   de arriba (se pierden solo datos de prueba).
+```bash
+cd nestjs-service
+npm ci
+npm run build
+npm start
+```
 
-2. **Backend Spring Boot + gRPC**, en otra terminal:
+Escucha gRPC en `localhost:9091`. Lee los contratos de `../proto`.
 
-   ```bash
-   cd api-rest-graphql
-   ./mvnw spring-boot:run
-   ```
+### 4. API Gateway
 
-   En Windows con cmd o PowerShell: `mvnw.cmd spring-boot:run`. Queda en
-   `http://localhost:8000`. Al arrancar crea las tablas y carga los datos de
-   ejemplo.
+```bash
+cd gateway
+./mvnw spring-boot:run
+```
 
-   **Puerto gRPC**: También escucha en `localhost:9090` para comunicación
-   interna entre servicios.
+Queda en `http://localhost:8080`. Si se reinicia el backend o el motor con
+el gateway levantado, el gateway puede responder 503 durante unos segundos:
+el cliente gRPC reintenta la conexión esperando cada vez más entre intentos.
+Variables: `BACKEND_GRPC`
+(`localhost:9090`), `MOTOR_GRPC` (`localhost:9091`), `JWT_SECRET` (la misma
+que el backend), `FRONTEND_URL` (para CORS).
 
-3. **Microservicio NestJS** (opcional para Hito 2):
+### 5. Frontend
 
-   ```bash
-   cd nestjs-service
-   npm install
-   npm run start:dev
-   ```
+```bash
+cd frontend
+npm ci
+npm run dev
+```
 
-   Escucha en `localhost:9091` (gRPC).
-
-4. **Gateway** (opcional para Hito 2):
-
-   ```bash
-   cd gateway
-   ./mvnw spring-boot:run
-   ```
-
-   Queda en `http://localhost:8080`.
-
-5. **Frontend**:
-
-   ```bash
-   cd frontend
-   npm ci
-   npm run dev
-   ```
-
-   Queda en `http://localhost:5173`.
+Queda en `http://localhost:5173`. Usa `VITE_API_URL` (backend) y
+`VITE_GATEWAY_URL` (gateway) si hay que cambiar las direcciones.
 
 ## Usuarios de prueba
 
@@ -197,58 +132,33 @@ Los crea el backend al arrancar:
 Cualquiera puede registrarse desde la pantalla de login; el usuario nuevo
 siempre queda como visitante.
 
-## Documentación interactiva de las APIs
+## APIs
 
-- **ReST (Swagger)**: `http://localhost:8000/swagger-ui.html` o via Gateway `http://localhost:8080/swagger-ui.html`
-- **GraphQL (GraphiQL)**: `http://localhost:8000/graphiql`
+- **Entrega 1:** Swagger en `http://localhost:8000/swagger-ui.html`, GraphiQL
+  en `http://localhost:8000/graphiql`, contrato de eventos en
+  [`docs/contrato-api-eventos.md`](docs/contrato-api-eventos.md) y colección
+  de Postman en `docs/postman/`.
+- **Entrega 2:** contrato REST del gateway en
+  [`docs/contrato-api-gateway.md`](docs/contrato-api-gateway.md) y contratos
+  gRPC en [`proto/`](proto/).
 
-Para probar rutas protegidas, iniciar sesión con `POST /api/auth/login`,
-copiar el `accessToken` y pegarlo en **Authorize** (Swagger) o Headers (GraphiQL).
+## Pruebas
 
-## Tests
+Tests de cada proyecto (no necesitan base ni otros servicios: el backend usa
+H2 en memoria y los servicios gRPC se prueban con servidores en memoria):
 
 ```bash
-cd api-rest-graphql
-./mvnw test
+cd api-rest-graphql && ./mvnw test
+cd gateway && ./mvnw test
+cd nestjs-service && npm test
 ```
 
-Usan una base H2 en memoria: no necesitan Docker ni MariaDB.
+Prueba de punta a punta, con todo levantado (pasos 1 a 4):
 
-## URLs de Servicios
-
-| Servicio | URL Externa | Puerto Interno |
-|----------|-------------|----------------|
-| Frontend | http://localhost:5173 | 5173 |
-| API Gateway | http://localhost:8080 | 8080 |
-| Spring Boot API | http://localhost:8000 | 8000 |
-| gRPC Spring Boot | - (interno) | 9090 |
-| gRPC NestJS | - (interno) | 9091 |
-| MariaDB | localhost:3306 | 3306 |
-
-## Arquitectura de Comunicación
-
-```
-Frontend React
-      │ HTTP REST
-      ▼
-┌─────────────────┐     ┌─────────────────┐
-│  API Gateway    │────▶│  Spring Boot    │
-│   (Puerto 8080) │ gRPC │   (Puerto 8000) │
-│                 │     │                 │
-│  REST Publico   │     │  @GrpcService   │
-│  /api/v2/**     │     │     + gRPC      │
-└─────────────────┘     └─────────────────┘
-        │                      │
-        │ gRPC                 │ gRPC
-        ▼                      ▼
-┌────────────────────────┐  ┌─────────────────┐
-│  Otros servicios gRPC  │  │  NestJS Service │
-│  (Extensibles)         │  │  (Puerto 9091)  │
-└────────────────────────┘  │  TypeScript     │
-                          │  Recomendaciones│
-                          └─────────────────┘
+```bash
+node pruebas/e2e.mjs
 ```
 
-## Licencia
-
-Proyecto académico UNLa - Sistemas Distribuidos
+Hace login, recorre las cuatro funcionalidades nuevas a través del gateway
+verificando qué servicios llamó, y comprueba que lo de la Entrega 1 sigue
+respondiendo igual.

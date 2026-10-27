@@ -37,8 +37,10 @@ public class UsuarioEntity extends AuditoriaEntity {
     @Column(name = "PASSWORD")
     private String password;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "PREFERENCIAS_ID")
+    // LAZY: con EAGER, cada usuario que se carga junto con otra entidad (p. ej. el
+    // autor de un comentario) dispara una consulta más por sus preferencias.
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "PREFERENCIAS_VISITANTE_ID")
     private com.unla.museo.usuarios.entity.PreferenciasUsuario preferencias;
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -63,15 +65,5 @@ public class UsuarioEntity extends AuditoriaEntity {
         this.historialVisitas = historialVisitas;
     }
 
-    /**
-     * Alias para creacion (usado por proto)
-     * Heredado de AuditoriaEntity
-     */
-    public LocalDateTime getFechaRegistro() {
-        return getCreacion();
-    }
 
-    public void setFechaRegistro(LocalDateTime fechaRegistro) {
-        setCreacion(fechaRegistro);
-    }
 }

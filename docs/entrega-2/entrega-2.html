@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Museo Virtual Interactivo - Entrega 2 (RPC)</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1a1a1a; }
+  h1 { font-size: 22pt; margin: 0 0 4px; }
+  h2 { font-size: 15pt; border-bottom: 2px solid #333; padding-bottom: 3px; margin-top: 26px; }
+  h3 { font-size: 12pt; margin: 18px 0 6px; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 9.5pt; }
+  th, td { border: 1px solid #bbb; padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { background: #eee; }
+  code { font-family: Consolas, monospace; font-size: 9pt; background: #f1f1f1; padding: 0 3px; }
+  pre { font-family: Consolas, monospace; font-size: 7.6pt; line-height: 1.3; background: #f6f6f6; border: 1px solid #ddd; padding: 6px 8px; white-space: pre-wrap; page-break-inside: auto; }
+  .completar { background: #fff3b0; font-weight: 600; }
+  .diagrama { text-align: center; margin: 10px 0; page-break-inside: avoid; }
+  .diagrama svg { max-width: 100%; height: auto; }
+  .salto { page-break-before: always; }
+  .captura { margin: 10px 0 14px; page-break-inside: avoid; }
+  .captura img { max-width: 100%; max-height: 120mm; border: 1px solid #bbb; display: block; margin: 0 auto; }
+  .captura p { font-size: 9pt; color: #444; margin: 4px 0 0; text-align: center; }
+  ul { margin: 4px 0; padding-left: 20px; }
+
+  /* Portada: misma información y tipografías que la portada de la Entrega 1 */
+  .portada { page-break-after: always; text-align: center; font-family: Arial, sans-serif; padding-top: 6mm; }
+  .portada img { width: 34mm; }
+  .portada .depto { font-family: "Times New Roman", serif; font-size: 20pt; font-weight: bold; margin: 8mm 0 2mm; line-height: 1.2; }
+  .portada .carrera { font-family: "Times New Roman", serif; font-size: 16pt; font-weight: bold; margin: 0 0 14mm; }
+  .portada .titulo { font-size: 24pt; font-weight: bold; margin: 0 0 3mm; }
+  .portada .subtitulo { font-size: 16pt; margin: 0 0 16mm; }
+  .portada table { width: auto; margin: 0 auto; border: none; font-size: 12pt; }
+  .portada td { border: none; padding: 3px 8px; }
+  .portada td:first-child { font-weight: bold; text-align: right; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="portada">
+  <img src="logo-unla.png" alt="Universidad Nacional de Lanús">
+  <p class="depto">DEPARTAMENTO DE DESARROLLO<br>PRODUCTIVO Y TECNOLÓGICO</p>
+  <p class="carrera">LICENCIATURA EN SISTEMAS</p>
+  <p class="titulo">Museo Virtual Interactivo</p>
+  <p class="subtitulo">Segunda entrega: Llamado a Procedimiento Remoto (RPC) con gRPC</p>
+  <table>
+    <tr><td>Asignatura:</td><td>Desarrollo de Software en Sistemas Distribuidos</td></tr>
+    <tr><td>Docente a cargo:</td><td>Diego Andrés Azcurra</td></tr>
+    <tr><td>Docente:</td><td>Julián Tomczak</td></tr>
+    <tr><td>Día y horario de cursada:</td><td>Miércoles 8 a 14 hs.</td></tr>
+    <tr><td>Año de cursada:</td><td>2026</td></tr>
+    <tr><td>Alumnos:</td><td>Luciano Aizar Assefh<br>Tomas Alejandro Diaz De Maio<br>Franco Nordinelli<br>Francisco Ian Patejim</td></tr>
+    <tr><td>Grupo:</td><td>A</td></tr>
+    <tr><td>Fecha de entrega:</td><td>27/10/2026</td></tr>
+  </table>
+</div>
+
+<h2>1. Estrategia de resolución</h2>
+
+<h3>1.1 Cómo incorporamos RPC</h3>
+<p>La Entrega 1 queda tal como estaba: el frontend React sigue usando el backend Spring Boot por REST y GraphQL, con el mismo JWT, para el catálogo, los eventos, el reporte, el Excel y la autenticación. No reemplazamos ni modificamos ninguno de esos casos de uso.</p>
+<p>Las cuatro funcionalidades nuevas (recorridos personalizados, comparación de obras, recomendaciones y exploración por movimiento) entran por un componente nuevo, el <b>API Gateway</b>. El front le habla en REST con JSON y el mismo token; el gateway valida el token, identifica la operación y la resuelve llamando por <b>gRPC</b> a los servicios internos. Cada funcionalidad necesita datos de más de un servicio, y es el gateway el que decide a quién llamar, en qué orden (o en paralelo), le pasa a cada servicio lo que devolvió el anterior y arma una única respuesta.</p>
+<p>Los servicios internos son cuatro:</p>
+<ul>
+  <li><b>CatalogoService</b>, <b>EventosService</b> y <b>UsuariosService</b>: los expone el mismo backend de la Entrega 1, uno por módulo. Cada uno es dueño de sus tablas y es el único que las consulta.</li>
+  <li><b>MotorService</b>: un servicio nuevo en NestJS (TypeScript), sin base de datos. Recibe los datos que juntó el gateway y calcula el recorrido, las recomendaciones y la comparación.</li>
+</ul>
+<p>El gateway no tiene base de datos ni reglas de negocio: no filtra, no puntúa, no ordena ni compara. Si mañana cambia cómo se elige un recorrido, se toca el motor y el gateway no se entera.</p>
+
+<h3>1.2 Por qué así</h3>
+<p><b>Servicios de dominio dentro del backend existente.</b> En la Entrega 1 elegimos un backend modular en vez de microservicios, y lo justificamos. La consigna pide servicios de Obras, Usuarios y Eventos y permite organizarlos de otra manera si la separación de responsabilidades queda justificada. Lo que hicimos fue darle a cada módulo su propio servicio gRPC con su propio contrato: <code>catalogo</code> expone CatalogoService, <code>eventos</code> expone EventosService y el módulo de usuarios expone UsuariosService. Cada servicio solo usa los repositorios de su módulo: Usuarios, por ejemplo, guarda el id de la obra con la que interactuó el visitante pero no lee la tabla de obras, que es del catálogo; si hace falta validar que la obra existe, el gateway se lo pregunta a CatalogoService. Partirlos en tres procesos que comparten la misma base no les daba más independencia real y nos obligaba a tirar abajo lo que ya funcionaba.</p>
+<p><b>Motor en otro proceso y otro lenguaje.</b> Las reglas de los recorridos, las recomendaciones y las comparaciones son lo único realmente nuevo del dominio. Las pusimos en un servicio aparte, escrito en TypeScript con NestJS, que no depende de la base ni de los otros servicios: todo lo que necesita le llega en el pedido. Eso lo hace fácil de probar con datos armados a mano, y demuestra que el mismo contrato <code>.proto</code> funciona entre Java y TypeScript.</p>
+<p><b>Un gateway que solo orquesta.</b> La consigna pide que el gateway coordine las llamadas sin contener lógica de negocio ni acceder a las bases. Por eso cada operación del gateway es siempre la misma secuencia de llamadas, sin decisiones sobre el contenido: los criterios del visitante viajan tal cual al catálogo, y las preferencias al motor, que es el que decide qué priorizar.</p>
+<p><b>Sin tocar la Entrega 1.</b> Las funcionalidades nuevas usan rutas nuevas (<code>/api/v2/...</code> en el gateway) y servicios gRPC nuevos. El backend sigue respondiendo REST y GraphQL en el puerto 8000 exactamente igual, y los 81 tests de la Entrega 1 siguen pasando sin cambios.</p>
+
+<h3>1.3 Funcionalidades de cada entrega</h3>
+<table>
+  <tr><th>Funcionalidad</th><th>Entrega</th><th>Cómo se accede</th><th>Roles</th></tr>
+  <tr><td>Registro, login y perfil</td><td>1</td><td>REST · backend <code>/api/auth</code></td><td>Todos</td></tr>
+  <tr><td>Catálogo y búsqueda de obras</td><td>1</td><td>GraphQL · backend <code>/graphql</code></td><td>Todos</td></tr>
+  <tr><td>Eventos, inscripciones y filtros favoritos</td><td>1</td><td>REST · backend <code>/api/eventos</code></td><td>Todos; ABM curador y administrador</td></tr>
+  <tr><td>Reporte de asistencia</td><td>1</td><td>GraphQL · backend</td><td>Curador y administrador</td></tr>
+  <tr><td>Exportación a Excel</td><td>1</td><td>REST · backend</td><td>Curador y administrador</td></tr>
+  <tr><td>Recorridos personalizados</td><td>2</td><td>REST · gateway <code>/api/v2/recorridos</code> → gRPC</td><td>Visitante</td></tr>
+  <tr><td>Comparación de obras</td><td>2</td><td>REST · gateway <code>/api/v2/comparaciones</code> → gRPC</td><td>Todos</td></tr>
+  <tr><td>Recomendaciones</td><td>2</td><td>REST · gateway <code>/api/v2/recomendaciones</code> → gRPC</td><td>Visitante</td></tr>
+  <tr><td>Exploración por movimiento</td><td>2</td><td>REST · gateway <code>/api/v2/exploraciones/{movimiento}</code> → gRPC</td><td>Todos</td></tr>
+</table>
+
+<h3 class="salto">1.4 Responsabilidad de cada componente</h3>
+<table>
+  <tr><th>Componente</th><th>Responsabilidad</th></tr>
+  <tr><td>Aplicación web (React)</td><td>Pantallas. Las de la Entrega 1 le hablan al backend; las de la Entrega 2, solo al gateway. En cada resultado nuevo muestra las llamadas gRPC que hizo el gateway, para que se vea la coordinación.</td></tr>
+  <tr><td>API Gateway (Java, Spring WebFlux)</td><td>Punto de entrada de la Entrega 2. Valida el JWT y el rol, valida la forma del pedido, llama a los servicios por gRPC (en paralelo cuando no dependen entre sí), traduce los errores gRPC a HTTP y arma la respuesta. No tiene base ni reglas de negocio.</td></tr>
+  <tr><td>Backend Spring Boot</td><td>Todo lo de la Entrega 1 (REST y GraphQL) y, además, el servidor gRPC con los tres servicios de dominio. Es el único que accede a MariaDB.</td></tr>
+  <tr><td>Motor de experiencias (NestJS)</td><td>Reglas de negocio nuevas: armar recorridos, puntuar recomendaciones y comparar obras. Sin base: calcula con los datos que recibe.</td></tr>
+  <tr><td>MariaDB</td><td>Datos de todos los módulos. Cada tabla tiene un único módulo dueño (sección 5).</td></tr>
+</table>
+
+<h2>2. Diagrama de arquitectura</h2>
+<div class="diagrama">
+<svg viewBox="0 0 760 540" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif" font-size="12">
+  <defs>
+    <marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker>
+    <marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f5fa8"/></marker>
+  </defs>
+  <!-- Aplicación web -->
+  <rect x="250" y="10" width="260" height="52" rx="6" fill="#f2f2f2" stroke="#333"/>
+  <text x="380" y="32" text-anchor="middle" font-weight="bold">Aplicación web</text>
+  <text x="380" y="50" text-anchor="middle">React + Vite · :5173</text>
+
+  <!-- Backend -->
+  <rect x="15" y="150" width="345" height="240" rx="6" fill="#fff" stroke="#333"/>
+  <text x="187" y="170" text-anchor="middle" font-weight="bold">Backend Spring Boot (api-rest-graphql)</text>
+  <text x="187" y="186" text-anchor="middle" font-size="11">Entrega 1 sin cambios: REST y GraphQL · :8000</text>
+  <rect x="30" y="198" width="315" height="40" rx="4" fill="#f2f2f2" stroke="#999"/>
+  <text x="187" y="215" text-anchor="middle" font-size="11">módulos seguridad · catalogo · eventos · reportes</text>
+  <text x="187" y="230" text-anchor="middle" font-size="11">(REST /api/... · GraphQL /graphql)</text>
+  <text x="187" y="258" text-anchor="middle" font-size="11" fill="#1f5fa8" font-weight="bold">Servidor gRPC · :9090</text>
+  <rect x="30" y="266" width="98" height="60" rx="4" fill="#e8f0fb" stroke="#1f5fa8"/>
+  <text x="79" y="290" text-anchor="middle" font-size="11" font-weight="bold">Catalogo</text>
+  <text x="79" y="304" text-anchor="middle" font-size="11" font-weight="bold">Service</text>
+  <text x="79" y="319" text-anchor="middle" font-size="10">obras, artistas</text>
+  <rect x="138" y="266" width="98" height="60" rx="4" fill="#e8f0fb" stroke="#1f5fa8"/>
+  <text x="187" y="290" text-anchor="middle" font-size="11" font-weight="bold">Eventos</text>
+  <text x="187" y="304" text-anchor="middle" font-size="11" font-weight="bold">Service</text>
+  <text x="187" y="319" text-anchor="middle" font-size="10">eventos, inscrip.</text>
+  <rect x="246" y="266" width="99" height="60" rx="4" fill="#e8f0fb" stroke="#1f5fa8"/>
+  <text x="295" y="290" text-anchor="middle" font-size="11" font-weight="bold">Usuarios</text>
+  <text x="295" y="304" text-anchor="middle" font-size="11" font-weight="bold">Service</text>
+  <text x="295" y="319" text-anchor="middle" font-size="10">preferencias</text>
+  <text x="187" y="350" text-anchor="middle" font-size="10.5">Cada servicio usa solo los repositorios de su módulo</text>
+  <text x="187" y="366" text-anchor="middle" font-size="10.5">Java 21 · Spring Boot 3.2 · Spring Data JPA</text>
+
+  <!-- MariaDB -->
+  <path d="M60,440 a127,14 0 0,0 254,0 v62 a127,14 0 0,1 -254,0 z" fill="#f2f2f2" stroke="#333"/>
+  <ellipse cx="187" cy="440" rx="127" ry="14" fill="#fafafa" stroke="#333"/>
+  <text x="187" y="475" text-anchor="middle" font-weight="bold">MariaDB · museodb</text>
+  <text x="187" y="492" text-anchor="middle" font-size="10.5">tablas agrupadas por módulo dueño</text>
+
+  <!-- Gateway -->
+  <rect x="425" y="150" width="320" height="100" rx="6" fill="#fff" stroke="#1f5fa8" stroke-width="2"/>
+  <text x="585" y="172" text-anchor="middle" font-weight="bold">API Gateway · :8080</text>
+  <text x="585" y="190" text-anchor="middle" font-size="11">Java 21 · Spring WebFlux · cliente gRPC</text>
+  <text x="585" y="210" text-anchor="middle" font-size="11">valida JWT y rol · orquesta las llamadas</text>
+  <text x="585" y="226" text-anchor="middle" font-size="11">traduce errores · arma la respuesta</text>
+  <text x="585" y="242" text-anchor="middle" font-size="11" fill="#a01010">sin base de datos · sin reglas de negocio</text>
+
+  <!-- Motor -->
+  <rect x="425" y="310" width="320" height="80" rx="6" fill="#e8f0fb" stroke="#1f5fa8"/>
+  <text x="585" y="332" text-anchor="middle" font-weight="bold">Motor de experiencias · gRPC :9091</text>
+  <text x="585" y="350" text-anchor="middle" font-size="11">NestJS · TypeScript · MotorService</text>
+  <text x="585" y="366" text-anchor="middle" font-size="11">recorridos · recomendaciones · comparación</text>
+  <text x="585" y="382" text-anchor="middle" font-size="11">sin base: calcula con lo que recibe</text>
+
+  <!-- Flechas -->
+  <line x1="320" y1="62" x2="200" y2="148" stroke="#333" stroke-width="1.5" marker-end="url(#f)"/>
+  <text x="170" y="100" font-size="10.5">REST + GraphQL · JWT</text>
+  <text x="170" y="114" font-size="10.5">(Entrega 1)</text>
+  <line x1="440" y1="62" x2="570" y2="148" stroke="#1f5fa8" stroke-width="2" marker-end="url(#fa)"/>
+  <text x="520" y="96" font-size="10.5" fill="#1f5fa8">REST/JSON · JWT</text>
+  <text x="520" y="110" font-size="10.5" fill="#1f5fa8">/api/v2 (Entrega 2)</text>
+  <line x1="425" y1="230" x2="362" y2="285" stroke="#1f5fa8" stroke-width="2" marker-end="url(#fa)"/>
+  <text x="368" y="243" font-size="10.5" fill="#1f5fa8" font-weight="bold">gRPC</text>
+  <line x1="585" y1="250" x2="585" y2="308" stroke="#1f5fa8" stroke-width="2" marker-end="url(#fa)"/>
+  <text x="592" y="284" font-size="10.5" fill="#1f5fa8" font-weight="bold">gRPC</text>
+  <line x1="187" y1="390" x2="187" y2="424" stroke="#333" stroke-width="1.5" marker-end="url(#f)"/>
+  <text x="195" y="412" font-size="10.5">JDBC</text>
+  <line x1="470" y1="250" x2="318" y2="452" stroke="#a01010" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="392" y="350" font-size="16" fill="#a01010" font-weight="bold">✕</text>
+  <text x="330" y="478" font-size="10.5" fill="#a01010">el gateway no accede a la base</text>
+</svg>
+</div>
+<p>Las flechas azules son el camino de la Entrega 2: el front llama al gateway, y el gateway llama por gRPC a los servicios del backend y al motor. El camino negro es el de la Entrega 1, que no cambió. La línea punteada marca que no existe conexión entre el gateway y la base.</p>
+
+<h3>2.1 Flujo de las funcionalidades nuevas</h3>
+<p>Cada operación del gateway es una secuencia fija de llamadas gRPC. Cuando dos llamadas no dependen una de la otra, van en paralelo.</p>
+<table>
+  <tr><th>Funcionalidad</th><th>Llamadas gRPC que hace el gateway</th></tr>
+  <tr><td>Recorrido personalizado</td><td>1. UsuariosService.ObtenerPerfil (preferencias, si el visitante las quiere usar)<br>2. CatalogoService.BuscarObras (criterios del pedido, solo obras en exhibición)<br>3. MotorService.ArmarRecorrido (candidatas + duración + cantidad + preferencias)</td></tr>
+  <tr><td>Comparación de obras</td><td>1. CatalogoService.ObtenerObras (2 a 6 obras)<br>2. MotorService.CompararObras</td></tr>
+  <tr><td>Recomendaciones</td><td>1. En paralelo: UsuariosService.ObtenerPerfil, UsuariosService.ListarInteracciones y EventosService.ListarEventosDeUsuario<br>2. CatalogoService.BuscarObras (candidatas) y CatalogoService.ObtenerObras (obras con las que interactuó)<br>3. MotorService.Recomendar</td></tr>
+  <tr><td>Exploración por movimiento</td><td>En paralelo: CatalogoService.BuscarObras, CatalogoService.ListarArtistas, EventosService.ListarEventosPorMovimiento y CatalogoService.ListarCategorias. El gateway compone la respuesta con obras, artistas, eventos y otros movimientos para seguir navegando.</td></tr>
+</table>
+
+<div class="diagrama">
+<svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif" font-size="11">
+  <defs><marker id="s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
+  <text x="380" y="16" text-anchor="middle" font-weight="bold" font-size="12">Secuencia: generar un recorrido personalizado</text>
+  <g font-weight="bold" text-anchor="middle">
+    <rect x="15" y="28" width="110" height="28" rx="4" fill="#f2f2f2" stroke="#333"/><text x="70" y="46">Front</text>
+    <rect x="165" y="28" width="110" height="28" rx="4" fill="#fff" stroke="#1f5fa8" stroke-width="2"/><text x="220" y="46">Gateway</text>
+    <rect x="315" y="28" width="130" height="28" rx="4" fill="#e8f0fb" stroke="#1f5fa8"/><text x="380" y="46">UsuariosService</text>
+    <rect x="475" y="28" width="130" height="28" rx="4" fill="#e8f0fb" stroke="#1f5fa8"/><text x="540" y="46">CatalogoService</text>
+    <rect x="635" y="28" width="115" height="28" rx="4" fill="#e8f0fb" stroke="#1f5fa8"/><text x="692" y="46">MotorService</text>
+  </g>
+  <g stroke="#999" stroke-dasharray="3 3">
+    <line x1="70" y1="56" x2="70" y2="320"/><line x1="220" y1="56" x2="220" y2="320"/><line x1="380" y1="56" x2="380" y2="320"/><line x1="540" y1="56" x2="540" y2="320"/><line x1="692" y1="56" x2="692" y2="320"/>
+  </g>
+  <g stroke="#333" stroke-width="1.3">
+    <line x1="70" y1="80" x2="218" y2="80" marker-end="url(#s)"/>
+    <line x1="220" y1="122" x2="378" y2="122" marker-end="url(#s)"/>
+    <line x1="380" y1="146" x2="222" y2="146" marker-end="url(#s)" stroke-dasharray="5 3"/>
+    <line x1="220" y1="178" x2="538" y2="178" marker-end="url(#s)"/>
+    <line x1="540" y1="202" x2="222" y2="202" marker-end="url(#s)" stroke-dasharray="5 3"/>
+    <line x1="220" y1="234" x2="690" y2="234" marker-end="url(#s)"/>
+    <line x1="692" y1="258" x2="222" y2="258" marker-end="url(#s)" stroke-dasharray="5 3"/>
+    <line x1="220" y1="296" x2="72" y2="296" marker-end="url(#s)" stroke-dasharray="5 3"/>
+  </g>
+  <text x="76" y="75">POST /api/v2/recorridos + JWT</text>
+  <text x="226" y="100" fill="#555">valida token y rol VISITANTE</text>
+  <text x="226" y="117">ObtenerPerfil(email del token)</text>
+  <text x="226" y="141">preferencias</text>
+  <text x="226" y="173">BuscarObras(criterios, solo en exhibición)</text>
+  <text x="226" y="197">obras candidatas</text>
+  <text x="226" y="229">ArmarRecorrido(candidatas, duración, cantidad, preferencias)</text>
+  <text x="226" y="253">paradas en orden, minutos, motivos, notas</text>
+  <text x="76" y="291">200 recorrido + obras + trazas de las 3 llamadas</text>
+</svg>
+</div>
+
+<h2 class="salto">3. Descripción de servicios</h2>
+
+<h3>3.1 API Gateway</h3>
+<table>
+  <tr><th style="width:24%">Responsabilidad</th><td>Punto de entrada de la Entrega 2: autenticación y autorización, validación de forma, orquestación de llamadas gRPC, traducción de errores y armado de la respuesta.</td></tr>
+  <tr><th>Operaciones</th><td><code>POST /api/v2/recorridos</code>, <code>POST /api/v2/comparaciones</code>, <code>GET /api/v2/recomendaciones</code>, <code>GET|PUT /api/v2/preferencias</code>, <code>POST /api/v2/interacciones</code>, <code>GET /api/v2/exploraciones/{movimiento}</code>, <code>GET /api/v2/categorias</code>. Contrato completo en <code>docs/contrato-api-gateway.md</code>.</td></tr>
+  <tr><th>Información que administra</th><td>Ninguna. No tiene base de datos.</td></tr>
+  <tr><th>Se comunica con</th><td>Aplicación web (REST), CatalogoService, EventosService, UsuariosService y MotorService (gRPC).</td></tr>
+  <tr><th>Funcionalidades</th><td>Las cuatro.</td></tr>
+</table>
+
+<h3>3.2 CatalogoService (backend, módulo catalogo)</h3>
+<table>
+  <tr><th style="width:24%">Responsabilidad</th><td>Consultar obras y artistas para los casos de uso nuevos. La búsqueda de la Entrega 1 sigue por GraphQL.</td></tr>
+  <tr><th>Operaciones</th><td><code>BuscarObras</code> (por movimientos, técnicas y temáticas, sin distinguir mayúsculas ni acentos), <code>ObtenerObras</code> (varias por id, en el orden pedido), <code>ListarArtistas</code> (con cantidad de obras), <code>ListarCategorias</code> (movimientos, técnicas y temáticas existentes).</td></tr>
+  <tr><th>Información que administra</th><td>Tablas <code>obras</code>, <code>artistas</code> (y <code>comentarios</code>, que usa solo GraphQL).</td></tr>
+  <tr><th>Se comunica con</th><td>Lo llama el gateway. No llama a otros servicios.</td></tr>
+  <tr><th>Funcionalidades</th><td>Las cuatro.</td></tr>
+</table>
+
+<h3>3.3 EventosService (backend, módulo eventos)</h3>
+<table>
+  <tr><th style="width:24%">Responsabilidad</th><td>Consultar eventos vinculados a un movimiento y los eventos a los que se anotó un visitante. La gestión de eventos e inscripciones sigue por REST.</td></tr>
+  <tr><th>Operaciones</th><td><code>ListarEventosPorMovimiento</code>, <code>ListarEventosDeUsuario</code>.</td></tr>
+  <tr><th>Información que administra</th><td>Tablas <code>eventos</code> e <code>inscripciones</code>.</td></tr>
+  <tr><th>Se comunica con</th><td>Lo llama el gateway. No llama a otros servicios.</td></tr>
+  <tr><th>Funcionalidades</th><td>Recomendaciones y exploración.</td></tr>
+</table>
+
+<h3>3.4 UsuariosService (backend, usuarios)</h3>
+<table>
+  <tr><th style="width:24%">Responsabilidad</th><td>Perfil del visitante, sus preferencias y sus interacciones con las obras. Identifica al usuario por el email, que es lo que viaja en el JWT.</td></tr>
+  <tr><th>Operaciones</th><td><code>ObtenerPerfil</code>, <code>ActualizarPreferencias</code>, <code>RegistrarInteraccion</code> (vio la obra / le interesa), <code>ListarInteracciones</code>.</td></tr>
+  <tr><th>Información que administra</th><td>Tablas <code>usuarios</code> (de la Entrega 1), <code>preferencias_usuario</code> y sus listas, <code>interacciones_usuario</code>.</td></tr>
+  <tr><th>Se comunica con</th><td>Lo llama el gateway. No llama a otros servicios.</td></tr>
+  <tr><th>Funcionalidades</th><td>Recorridos y recomendaciones.</td></tr>
+</table>
+
+<h3>3.5 MotorService (NestJS)</h3>
+<table>
+  <tr><th style="width:24%">Responsabilidad</th><td>Reglas de negocio de la Entrega 2.</td></tr>
+  <tr><th>Operaciones</th><td><code>ArmarRecorrido</code>: elige obras priorizando las que coinciden con las preferencias, sin pasarse del tiempo ni de la cantidad pedida, y las ordena por sala y por año para minimizar traslados; devuelve minutos sugeridos y el motivo de cada parada.<br><code>Recomendar</code>: puntúa las obras que el visitante no vio según sus preferencias, las obras que le interesaron (mismo artista o movimiento) y los eventos a los que se anotó; explica cada recomendación. Sin datos del visitante, propone una obra por movimiento.<br><code>CompararObras</code>: compara dos o más obras atributo por atributo y saca observaciones (años que las separan, artistas, sala).</td></tr>
+  <tr><th>Información que administra</th><td>Ninguna. Calcula con lo que recibe en cada pedido.</td></tr>
+  <tr><th>Se comunica con</th><td>Lo llama el gateway. No llama a otros servicios.</td></tr>
+  <tr><th>Funcionalidades</th><td>Recorridos, recomendaciones y comparación.</td></tr>
+</table>
+
+<h2 class="salto">4. Contratos .proto</h2>
+<p>Los contratos están en la carpeta <code>proto/</code> del repositorio y son la única fuente de verdad: el backend y el gateway generan el código Java con <code>protobuf-maven-plugin</code>, y NestJS carga los mismos archivos en tiempo de ejecución con <code>@grpc/proto-loader</code>. El motor importa los mensajes de los otros tres contratos (<code>Obra</code>, <code>Preferencias</code>, <code>Evento</code>), así que el gateway le pasa los datos tal como los recibió, sin traducirlos.</p>
+<table>
+  <tr><th>Archivo</th><th>Servicio</th><th>Métodos</th><th>Mensajes principales</th></tr>
+  <tr><td><code>catalogo.proto</code></td><td>CatalogoService</td><td>BuscarObras, ObtenerObras, ListarArtistas, ListarCategorias</td><td>Obra, Artista, Categoria</td></tr>
+  <tr><td><code>eventos.proto</code></td><td>EventosService</td><td>ListarEventosPorMovimiento, ListarEventosDeUsuario</td><td>Evento</td></tr>
+  <tr><td><code>usuarios.proto</code></td><td>UsuariosService</td><td>ObtenerPerfil, ActualizarPreferencias, RegistrarInteraccion, ListarInteracciones</td><td>Perfil, Preferencias, Interaccion</td></tr>
+  <tr><td><code>motor.proto</code></td><td>MotorService</td><td>ArmarRecorrido, Recomendar, CompararObras</td><td>Recorrido, Parada, Recomendacion, Comparacion</td></tr>
+</table>
+<p>Tipos usados: <code>int64</code> para ids, <code>int32</code> para años, minutos y cantidades, <code>double</code> para puntajes, <code>bool</code>, <code>string</code> (fechas en ISO 8601) y <code>repeated</code> para listas. Los errores viajan como estados gRPC (<code>NOT_FOUND</code>, <code>INVALID_ARGUMENT</code>, <code>UNAVAILABLE</code>), que el gateway traduce a 404, 400 y 503. El texto completo de los cuatro archivos está en el anexo.</p>
+
+<h2>5. Modelo de datos</h2>
+<p>La Entrega 2 no cambia ninguna tabla de la Entrega 1 de forma incompatible: agrega columnas para poder filtrar por temática y relacionar artistas y eventos con un movimiento, y agrega las tablas del visitante (preferencias e interacciones). El DER muestra solo las tablas que participan de las funcionalidades nuevas; el resto (roles, comentarios, filtros favoritos) sigue igual que en la Entrega 1.</p>
+<div class="diagrama"><svg viewBox="0 0 760 525" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+<line x1="215" y1="60" x2="265" y2="60" stroke="#555" stroke-width="1.2"/>
+<line x1="215" y1="330" x2="265" y2="300" stroke="#555" stroke-width="1.2"/>
+<line x1="215" y1="345" x2="265" y2="430" stroke="#555" stroke-width="1.2"/>
+<line x1="480" y1="300" x2="530" y2="285" stroke="#555" stroke-width="1.2"/>
+<line x1="480" y1="300" x2="530" y2="360" stroke="#555" stroke-width="1.2"/>
+<line x1="480" y1="300" x2="530" y2="435" stroke="#555" stroke-width="1.2"/>
+<line x1="640" y1="154" x2="640" y2="190" stroke="#555" stroke-width="1.2"/>
+<rect x="10" y="10" width="205" height="129" rx="3" fill="#fff" stroke="#333" stroke-width="1"/>
+<rect x="10" y="10" width="205" height="20" rx="3" fill="#eee" stroke="#333"/>
+<text x="16" y="24" font-weight="bold" font-size="10.5">artistas</text>
+<text x="16" y="42" font-size="9.5" fill="#1a1a1a" font-weight="normal">id</text>
+<text x="209" y="42" font-size="9" fill="#666" text-anchor="end">bigint PK</text>
+<text x="16" y="57" font-size="9.5" fill="#1a1a1a" font-weight="normal">nombre</text>
+<text x="209" y="57" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<text x="16" y="72" font-size="9.5" fill="#1a1a1a" font-weight="normal">biografia</text>
+<text x="209" y="72" font-size="9" fill="#666" text-anchor="end">text</text>
+<text x="16" y="87" font-size="9.5" fill="#1f5fa8" font-weight="bold">nacionalidad</text>
+<text x="209" y="87" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<text x="16" y="102" font-size="9.5" fill="#1f5fa8" font-weight="bold">movimiento</text>
+<text x="209" y="102" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<text x="16" y="117" font-size="9.5" fill="#1f5fa8" font-weight="bold">anio_nacimiento</text>
+<text x="209" y="117" font-size="9" fill="#666" text-anchor="end">int</text>
+<text x="16" y="132" font-size="9.5" fill="#1f5fa8" font-weight="bold">anio_fallecimiento</text>
+<text x="209" y="132" font-size="9" fill="#666" text-anchor="end">int</text>
+<rect x="265" y="10" width="215" height="174" rx="3" fill="#fff" stroke="#333" stroke-width="1"/>
+<rect x="265" y="10" width="215" height="20" rx="3" fill="#eee" stroke="#333"/>
+<text x="271" y="24" font-weight="bold" font-size="10.5">obras</text>
+<text x="271" y="42" font-size="9.5" fill="#1a1a1a" font-weight="normal">id</text>
+<text x="474" y="42" font-size="9" fill="#666" text-anchor="end">bigint PK</text>
+<text x="271" y="57" font-size="9.5" fill="#1a1a1a" font-weight="normal">titulo</text>
+<text x="474" y="57" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<text x="271" y="72" font-size="9.5" fill="#1a1a1a" font-weight="normal">artista_id</text>
+<text x="474" y="72" font-size="9" fill="#666" text-anchor="end">bigint FK</text>
+<text x="271" y="87" font-size="9.5" fill="#1a1a1a" font-weight="normal">epoca</text>
+<text x="474" y="87" font-size="9" fill="#666" text-anchor="end">varchar (= movimiento)</text>
+<text x="271" y="102" font-size="9.5" fill="#1a1a1a" font-weight="normal">tecnica</text>
+<text x="474" y="102" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<text x="271" y="117" font-size="9.5" fill="#1f5fa8" font-weight="bold">tematica</text>
+<text x="474" y="117" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<text x="271" y="132" font-size="9.5" fill="#1a1a1a" font-weight="normal">anio_creacion</text>
+<text x="474" y="132" font-size="9" fill="#666" text-anchor="end">int</text>
+<text x="271" y="147" font-size="9.5" fill="#1a1a1a" font-weight="normal">ubicacion</text>
+<text x="474" y="147" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<text x="271" y="162" font-size="9.5" fill="#1a1a1a" font-weight="normal">en_exhibicion</text>
+<text x="474" y="162" font-size="9" fill="#666" text-anchor="end">bit</text>
+<text x="271" y="177" font-size="9.5" fill="#1a1a1a" font-weight="normal">…</text>
+<text x="474" y="177" font-size="9" fill="#666" text-anchor="end"></text>
+<rect x="530" y="10" width="220" height="144" rx="3" fill="#fff" stroke="#333" stroke-width="1"/>
+<rect x="530" y="10" width="220" height="20" rx="3" fill="#eee" stroke="#333"/>
+<text x="536" y="24" font-weight="bold" font-size="10.5">eventos</text>
+<text x="536" y="42" font-size="9.5" fill="#1a1a1a" font-weight="normal">id</text>
+<text x="744" y="42" font-size="9" fill="#666" text-anchor="end">bigint PK</text>
+<text x="536" y="57" font-size="9.5" fill="#1a1a1a" font-weight="normal">titulo</text>
+<text x="744" y="57" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<text x="536" y="72" font-size="9.5" fill="#1a1a1a" font-weight="normal">tipo</text>
+<text x="744" y="72" font-size="9" fill="#666" text-anchor="end">enum</text>
+<text x="536" y="87" font-size="9.5" fill="#1a1a1a" font-weight="normal">fecha_hora</text>
+<text x="744" y="87" font-size="9" fill="#666" text-anchor="end">datetime</text>
+<text x="536" y="102" font-size="9.5" fill="#1a1a1a" font-weight="normal">cupo_maximo</text>
+<text x="744" y="102" font-size="9" fill="#666" text-anchor="end">int</text>
+<text x="536" y="117" font-size="9.5" fill="#1a1a1a" font-weight="normal">curador_id</text>
+<text x="744" y="117" font-size="9" fill="#666" text-anchor="end">bigint FK</text>
+<text x="536" y="132" font-size="9.5" fill="#1f5fa8" font-weight="bold">movimiento</text>
+<text x="744" y="132" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<text x="536" y="147" font-size="9.5" fill="#1a1a1a" font-weight="normal">…</text>
+<text x="744" y="147" font-size="9" fill="#666" text-anchor="end"></text>
+<rect x="10" y="290" width="205" height="99" rx="3" fill="#fff" stroke="#333" stroke-width="1"/>
+<rect x="10" y="290" width="205" height="20" rx="3" fill="#eee" stroke="#333"/>
+<text x="16" y="304" font-weight="bold" font-size="10.5">usuarios</text>
+<text x="16" y="322" font-size="9.5" fill="#1a1a1a" font-weight="normal">id</text>
+<text x="209" y="322" font-size="9" fill="#666" text-anchor="end">bigint PK</text>
+<text x="16" y="337" font-size="9.5" fill="#1a1a1a" font-weight="normal">email</text>
+<text x="209" y="337" font-size="9" fill="#666" text-anchor="end">varchar UK</text>
+<text x="16" y="352" font-size="9.5" fill="#1a1a1a" font-weight="normal">id_rol</text>
+<text x="209" y="352" font-size="9" fill="#666" text-anchor="end">varchar FK</text>
+<text x="16" y="367" font-size="9.5" fill="#1f5fa8" font-weight="bold">preferencias_visitante_id</text>
+<text x="209" y="367" font-size="9" fill="#666" text-anchor="end">FK</text>
+<text x="16" y="382" font-size="9.5" fill="#1a1a1a" font-weight="normal">…</text>
+<text x="209" y="382" font-size="9" fill="#666" text-anchor="end"></text>
+<rect x="265" y="290" width="215" height="39" rx="3" fill="#fff" stroke="#1f5fa8" stroke-width="1.6"/>
+<rect x="265" y="290" width="215" height="20" rx="3" fill="#e8f0fb" stroke="#1f5fa8"/>
+<text x="271" y="304" font-weight="bold" font-size="10.5">preferencias_visitante</text>
+<text x="271" y="322" font-size="9.5" fill="#1f5fa8" font-weight="bold">id</text>
+<text x="474" y="322" font-size="9" fill="#666" text-anchor="end">bigint PK</text>
+<rect x="265" y="390" width="215" height="99" rx="3" fill="#fff" stroke="#1f5fa8" stroke-width="1.6"/>
+<rect x="265" y="390" width="215" height="20" rx="3" fill="#e8f0fb" stroke="#1f5fa8"/>
+<text x="271" y="404" font-weight="bold" font-size="10.5">interacciones_visitante</text>
+<text x="271" y="422" font-size="9.5" fill="#1f5fa8" font-weight="bold">id</text>
+<text x="474" y="422" font-size="9" fill="#666" text-anchor="end">bigint PK</text>
+<text x="271" y="437" font-size="9.5" fill="#1f5fa8" font-weight="bold">usuario_id</text>
+<text x="474" y="437" font-size="9" fill="#666" text-anchor="end">bigint FK</text>
+<text x="271" y="452" font-size="9.5" fill="#1f5fa8" font-weight="bold">obra_id</text>
+<text x="474" y="452" font-size="9" fill="#666" text-anchor="end">bigint (sin FK)</text>
+<text x="271" y="467" font-size="9.5" fill="#1f5fa8" font-weight="bold">tipo_interaccion</text>
+<text x="474" y="467" font-size="9" fill="#666" text-anchor="end">VISTA | INTERES</text>
+<text x="271" y="482" font-size="9.5" fill="#1f5fa8" font-weight="bold">fecha_interaccion</text>
+<text x="474" y="482" font-size="9" fill="#666" text-anchor="end">datetime</text>
+<rect x="530" y="270" width="220" height="54" rx="3" fill="#fff" stroke="#1f5fa8" stroke-width="1.6"/>
+<rect x="530" y="270" width="220" height="20" rx="3" fill="#e8f0fb" stroke="#1f5fa8"/>
+<text x="536" y="284" font-weight="bold" font-size="10.5">preferencias_visitante_movimientos</text>
+<text x="536" y="302" font-size="9.5" fill="#1f5fa8" font-weight="bold">preferencia_id</text>
+<text x="744" y="302" font-size="9" fill="#666" text-anchor="end">FK</text>
+<text x="536" y="317" font-size="9.5" fill="#1f5fa8" font-weight="bold">movimiento</text>
+<text x="744" y="317" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<rect x="530" y="345" width="220" height="54" rx="3" fill="#fff" stroke="#1f5fa8" stroke-width="1.6"/>
+<rect x="530" y="345" width="220" height="20" rx="3" fill="#e8f0fb" stroke="#1f5fa8"/>
+<text x="536" y="359" font-weight="bold" font-size="10.5">preferencias_visitante_tecnicas</text>
+<text x="536" y="377" font-size="9.5" fill="#1f5fa8" font-weight="bold">preferencia_id</text>
+<text x="744" y="377" font-size="9" fill="#666" text-anchor="end">FK</text>
+<text x="536" y="392" font-size="9.5" fill="#1f5fa8" font-weight="bold">tecnica</text>
+<text x="744" y="392" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<rect x="530" y="420" width="220" height="54" rx="3" fill="#fff" stroke="#1f5fa8" stroke-width="1.6"/>
+<rect x="530" y="420" width="220" height="20" rx="3" fill="#e8f0fb" stroke="#1f5fa8"/>
+<text x="536" y="434" font-weight="bold" font-size="10.5">preferencias_visitante_tematicas</text>
+<text x="536" y="452" font-size="9.5" fill="#1f5fa8" font-weight="bold">preferencia_id</text>
+<text x="744" y="452" font-size="9" fill="#666" text-anchor="end">FK</text>
+<text x="536" y="467" font-size="9.5" fill="#1f5fa8" font-weight="bold">tematica</text>
+<text x="744" y="467" font-size="9" fill="#666" text-anchor="end">varchar</text>
+<rect x="530" y="190" width="220" height="39" rx="3" fill="#fff" stroke="#333" stroke-width="1"/>
+<rect x="530" y="190" width="220" height="20" rx="3" fill="#eee" stroke="#333"/>
+<text x="536" y="204" font-weight="bold" font-size="10.5">inscripciones</text>
+<text x="536" y="222" font-size="9.5" fill="#1a1a1a" font-weight="normal">evento_id · usuario_id</text>
+<text x="744" y="222" font-size="9" fill="#666" text-anchor="end">FK · FK</text><text x="10" y="515" font-size="9.5" fill="#1f5fa8" font-weight="bold">Azul: tabla o columna nueva de la Entrega 2.</text><text x="250" y="515" font-size="9.5" fill="#a01010">interacciones_visitante.obra_id va sin clave foránea: la tabla obras es del catálogo.</text>
+</svg>
+</div>
+<table>
+  <tr><th>Tabla</th><th>Cambio</th><th>Módulo dueño</th><th>Servicio gRPC que la consulta</th></tr>
+  <tr><td><code>obras</code></td><td>Nueva columna <code>tematica</code>. El movimiento es la columna <code>epoca</code> que ya existía.</td><td>catalogo</td><td>CatalogoService</td></tr>
+  <tr><td><code>artistas</code></td><td>Nuevas columnas <code>nacionalidad</code>, <code>movimiento</code>, <code>anio_nacimiento</code> y <code>anio_fallecimiento</code>, para la exploración.</td><td>catalogo</td><td>CatalogoService</td></tr>
+  <tr><td><code>eventos</code></td><td>Nueva columna <code>movimiento</code> (opcional): vincula una actividad con un movimiento artístico.</td><td>eventos</td><td>EventosService</td></tr>
+  <tr><td><code>inscripciones</code></td><td>Sin cambios. Se usa para saber a qué eventos se anotó el visitante.</td><td>eventos</td><td>EventosService</td></tr>
+  <tr><td><code>usuarios</code></td><td>Nueva columna <code>preferencias_visitante_id</code>.</td><td>seguridad</td><td>UsuariosService</td></tr>
+  <tr><td><code>preferencias_visitante</code> y sus tres listas</td><td>Nuevas: movimientos, técnicas y temáticas preferidas del visitante.</td><td>usuarios</td><td>UsuariosService</td></tr>
+  <tr><td><code>interacciones_visitante</code></td><td>Nueva: obras que el visitante vio o marcó como de interés. Guarda <code>obra_id</code> sin clave foránea, como <code>curador_id</code> en <code>filtros_favorito</code>: la tabla <code>obras</code> es del catálogo y el módulo de usuarios no depende de ella.</td><td>usuarios</td><td>UsuariosService</td></tr>
+</table>
+<p>Los datos de ejemplo se ampliaron a 18 obras reales, con dos o tres por movimiento, eventos futuros vinculados a movimientos y un visitante de prueba con preferencias e interacciones. Al arrancar, el backend completa los datos que falten en una base existente sin duplicar nada, así que una base de la Entrega 1 sirve sin recrearla.</p>
+
+<h2>6. Justificación tecnológica</h2>
+<table>
+  <tr><th>Para qué</th><th>Tecnología</th><th>Por qué</th></tr>
+  <tr><td>Comunicación entre servicios</td><td>gRPC sobre HTTP/2 con Protocol Buffers</td><td>Lo pide la consigna. Además, el contrato <code>.proto</code> se escribe una vez y genera los tipos en Java y TypeScript, y el formato binario con HTTP/2 permite varias llamadas en paralelo sobre una misma conexión.</td></tr>
+  <tr><td>Gateway</td><td>Java 21, Spring Boot 3.2 con WebFlux y Spring Cloud Gateway</td><td>No bloqueante: mientras espera las respuestas gRPC no ocupa un hilo por pedido, y las llamadas en paralelo se combinan con Reactor. Es Java como el backend, así que comparte criterios (JWT con jjwt, mismo formato de error).</td></tr>
+  <tr><td>Integración gRPC en Spring</td><td>grpc-spring-boot-starter (net.devh) 3.1 y grpc-java</td><td>Registra los servicios con una anotación y crea los clientes desde la configuración. La versión que usamos está construida sobre Spring Boot 3.2.4; por eso el backend y el gateway pasaron de Spring Boot 4.1 (Entrega 1) a 3.2. Lo verificamos corriendo los 81 tests de la Entrega 1, que pasan sin cambios.</td></tr>
+  <tr><td>Motor</td><td>NestJS 10 con TypeScript, @grpc/grpc-js</td><td>Cumple el requisito de usar otro lenguaje que el gateway y demuestra que el mismo contrato funciona entre tecnologías. NestJS trae soporte nativo para microservicios gRPC.</td></tr>
+  <tr><td>Backend y base</td><td>Spring Boot, Spring Data JPA, MariaDB</td><td>Los mismos de la Entrega 1. Los servicios gRPC de dominio se agregan al backend existente, sin cambiar su forma de persistir.</td></tr>
+  <tr><td>Frontend</td><td>React 19, Vite, React Router, Apollo Client</td><td>Los mismos de la Entrega 1. Las pantallas nuevas usan un cliente REST hacia el gateway que reutiliza el manejo de token y errores existente.</td></tr>
+  <tr><td>Pruebas</td><td>JUnit 5 y WebTestClient (Java), Jest (NestJS)</td><td>Los servicios gRPC se prueban con servidores gRPC en memoria (<code>InProcessServer</code>), el gateway con servicios falsos en memoria, y el motor con pruebas unitarias y una prueba real por la red.</td></tr>
+</table>
+
+<h2>7. Código fuente</h2>
+<p>El código está en el repositorio público <a href="https://github.com/aizarassefh/sist-dist-tp-grupo-a">https://github.com/aizarassefh/sist-dist-tp-grupo-a</a>. En el README está explicado cómo levantar la base, el backend, el motor, el gateway y el frontend.</p>
+
+<h2>8. Pruebas</h2>
+<p>Todas las pruebas y capturas se hicieron el 27/10/2026 con los procesos reales corriendo en una misma máquina (backend, motor NestJS, gateway y frontend) sobre una base MariaDB que ya tenía los datos de la Entrega 1.</p>
+<h3>8.1 Pruebas automáticas de cada proyecto</h3>
+<table>
+  <tr><th>Proyecto</th><th>Pruebas</th><th>Qué verifican</th></tr>
+  <tr><td>Backend</td><td>105 (104 pasan y 1 omitida a propósito)</td><td>Los 81 tests de la Entrega 1 sin cambios (REST, GraphQL, JWT, reporte, Excel) y 23 nuevos de los servicios gRPC, llamados con un cliente gRPC real contra un servidor gRPC en memoria: búsqueda con criterios combinados y acentos, obras por id y su error <code>NOT_FOUND</code>, categorías, eventos por movimiento y por usuario, perfil, preferencias e interacciones. La omitida verifica los 18 datos de ejemplo ampliados y se corre aparte, porque los tests de la Entrega 1 cuentan con las 9 obras originales.</td></tr>
+  <tr><td>Gateway</td><td>24</td><td>La orquestación de cada operación con servicios gRPC falsos en memoria: a qué servicios llama, con qué datos y qué devuelve; que las preferencias solo viajan al motor cuando el visitante las pide; 401 sin token, 403 por rol; 400 por pedidos mal formados; 404 de una obra inexistente sin llegar a Usuarios; 503 si el motor no está, mientras la exploración, que no lo usa, sigue respondiendo.</td></tr>
+  <tr><td>Motor NestJS</td><td>28</td><td>Las reglas de recorrido (tiempo con traslados, cantidad, orden por sala y año, motivos), de recomendación (puntajes, motivos, exclusión de obras ya vistas, modo exploratorio) y de comparación; y una prueba que levanta el servicio y lo llama por la red con un cliente gRPC cargando el mismo <code>motor.proto</code>.</td></tr>
+</table>
+<div class="captura"><img src="capturas/tests.jpg" alt="Resultado de los tests de los tres proyectos."><p>Resultado de los tests de los tres proyectos.</p></div>
+<h3>8.2 Prueba de punta a punta</h3>
+<p><code>pruebas/e2e.mjs</code> se corre con todo levantado. Hace login con los usuarios de ejemplo, comprueba que lo principal de la Entrega 1 responde igual y recorre las funcionalidades nuevas a través del gateway, verificando en las trazas qué servicios se llamaron. Es la que demuestra la comunicación por la red entre el gateway en Java, el backend en Java y el motor en TypeScript.</p>
+<div class="captura"><img src="capturas/e2e.jpg" alt="Prueba de punta a punta: 14 de 14. Cada línea de la Entrega 2 muestra las llamadas gRPC que hizo el gateway y su duración."><p>Prueba de punta a punta: 14 de 14. Cada línea de la Entrega 2 muestra las llamadas gRPC que hizo el gateway y su duración.</p></div>
+<h3 class="salto">8.3 Funcionalidades nuevas</h3>
+<p>Cada pantalla muestra al pie "Cómo se resolvió": las llamadas gRPC que hizo el gateway para armar esa respuesta.</p>
+<div class="captura"><img src="capturas/recorrido.jpg" alt="Recorrido personalizado de 45 minutos por el Impresionismo, teniendo en cuenta las preferencias del visitante: paradas en orden, sala, minutos y motivo."><p>Recorrido personalizado de 45 minutos por el Impresionismo, teniendo en cuenta las preferencias del visitante: paradas en orden, sala, minutos y motivo.</p></div>
+<div class="captura"><img src="capturas/comparacion.jpg" alt="Comparación de tres obras: una columna por obra y una fila por atributo; se resaltan las filas donde coinciden."><p>Comparación de tres obras: una columna por obra y una fila por atributo; se resaltan las filas donde coinciden.</p></div>
+<div class="captura"><img src="capturas/recomendaciones.jpg" alt="Recomendaciones personalizadas: cada obra explica por qué se recomienda (preferencias, obras que le interesaron, eventos a los que se anotó)."><p>Recomendaciones personalizadas: cada obra explica por qué se recomienda (preferencias, obras que le interesaron, eventos a los que se anotó).</p></div>
+<div class="captura"><img src="capturas/exploracion.jpg" alt="Exploración del Impresionismo: obras, artistas, eventos vinculados y otros movimientos para seguir navegando. Trazas: llamadas en paralelo a Catálogo y Eventos."><p>Exploración del Impresionismo: obras, artistas, eventos vinculados y otros movimientos para seguir navegando. Trazas: llamadas en paralelo a Catálogo y Eventos.</p></div>
+<h3 class="salto">8.4 Interacción entre el gateway y los servicios ante una falla</h3>
+<p>Con el motor NestJS apagado, la comparación responde 503 con un mensaje claro, y la exploración, que solo usa Catálogo y Eventos, sigue funcionando. Al volver a levantar el motor, la comparación anda sin reiniciar nada.</p>
+<div class="captura"><img src="capturas/motor-caido.jpg" alt="Comparación con el motor apagado: "El servicio MotorService no está disponible"."><p>Comparación con el motor apagado: "El servicio MotorService no está disponible".</p></div>
+<div class="captura"><img src="capturas/motor-caido-exploracion.jpg" alt="En el mismo momento, la exploración del Barroco responde normalmente."><p>En el mismo momento, la exploración del Barroco responde normalmente.</p></div>
+<h3 class="salto">8.5 Continuidad de la Entrega 1</h3>
+<div class="captura"><img src="capturas/entrega1-coleccion.jpg" alt="Colección (GraphQL), igual que en la Entrega 1."><p>Colección (GraphQL), igual que en la Entrega 1.</p></div>
+<div class="captura"><img src="capturas/entrega1-reporte.jpg" alt="Reporte de asistencia (GraphQL) y exportación a Excel (REST) como curador."><p>Reporte de asistencia (GraphQL) y exportación a Excel (REST) como curador.</p></div>
+
+
+<h2>9. Video</h2>
+<p>Enlace: <span class="completar">[completar con el enlace al video]</span></p>
+
+<h2>10. Integrantes y tareas</h2>
+<p>Grupo A.</p>
+<table>
+  <tr><th>Integrante</th><th>Tareas en la Entrega 2</th></tr>
+  <tr><td>Luciano Aizar Assefh</td><td>Primera estructura de la arquitectura gRPC: separación del proyecto en backend, gateway y servicio NestJS, primeros contratos <code>.proto</code> y servicios gRPC, y configuración de Docker.</td></tr>
+  <tr><td>Tomas Alejandro Diaz De Maio</td><td>Arreglos de compilación del backend después de la reorganización (repositorio de obras, manejo de errores, recomendaciones) y recuperación de los tests de la Entrega 1.</td></tr>
+  <tr><td>Franco Nordinelli</td><td class="completar">[completar]</td></tr>
+  <tr><td>Francisco Ian Patejim</td><td>Puesta en marcha de la rama gRPC, contratos definitivos, servicios gRPC de dominio, motor de experiencias, orquestación del gateway, pantallas nuevas, pruebas y documentación.</td></tr>
+</table>
+
+<h2 class="salto">Anexo: contratos .proto</h2>
+<!-- ANEXO_PROTOS -->
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Los clientes gRPC apuntan a servidores falsos en memoria (ver ServidoresFalsos):
+# los tests no necesitan puertos ni el backend real.
+grpc:
+  client:
+    catalogo:
+      address: in-process:fake-backend
+    eventos:
+      address: in-process:fake-backend
+    usuarios:
+      address: in-process:fake-backend
+    motor:
+      address: in-process:fake-motor

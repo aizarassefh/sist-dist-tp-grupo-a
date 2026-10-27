@@ -23,6 +23,7 @@
 .navegacion-links {
   flex: 1;
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: var(--espacio-5);
 }
