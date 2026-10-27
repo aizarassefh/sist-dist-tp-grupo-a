@@ -130,39 +130,39 @@ public class CatalogoDataInitializer {
     // asumen exactamente las 9 originales: app.datos-de-ejemplo-ampliados=false
     // en el perfil test las deja afuera.
     private static final List<DatoObra> OBRAS_AMPLIADAS = List.of(
-            new DatoObra("Impresión, sol naciente", MONET, null, 1872,
+            new DatoObra("Impresión, sol naciente", MONET, "/obras/impresion-sol-naciente.jpg", 1872,
                     "Óleo sobre lienzo", "48 cm x 63 cm", "Impresionismo", "Paisaje",
                     "Vista del puerto de Le Havre al amanecer que dio nombre al impresionismo.",
                     "Sala de Arte Moderno", true, List.of()),
-            new DatoObra("Baile en el Moulin de la Galette", RENOIR, null, 1876,
+            new DatoObra("Baile en el Moulin de la Galette", RENOIR, "/obras/moulin-galette.jpg", 1876,
                     "Óleo sobre lienzo", "131 cm x 175 cm", "Impresionismo", "Escena cotidiana",
                     "Fiesta al aire libre en una sala de baile de Montmartre, con juegos de luz entre los árboles.",
                     "Sala de Arte Europeo", true, List.of()),
-            new DatoObra("La clase de danza", DEGAS, null, 1874,
+            new DatoObra("La clase de danza", DEGAS, "/obras/clase-danza.jpg", 1874,
                     "Óleo sobre lienzo", "85 cm x 75 cm", "Impresionismo", "Escena cotidiana",
                     "Bailarinas de la Ópera de París durante un ensayo con su maestro de danza.",
                     "Sala de Arte Europeo", true, List.of()),
-            new DatoObra("Los girasoles", VAN_GOGH, null, 1888,
+            new DatoObra("Los girasoles", VAN_GOGH, "/obras/girasoles.jpg", 1888,
                     "Óleo sobre lienzo", "92,1 cm x 73 cm", "Postimpresionismo", "Naturaleza muerta",
                     "Jarrón con girasoles pintado en Arlés para decorar la habitación de Paul Gauguin.",
                     "Sala de Arte Moderno", true, List.of()),
-            new DatoObra("La última cena", LEONARDO, null, 1498,
+            new DatoObra("La última cena", LEONARDO, "/obras/ultima-cena.jpg", 1498,
                     "Temple y óleo sobre yeso", "460 cm x 880 cm", "Renacimiento", "Religión",
                     "Mural del refectorio de Santa Maria delle Grazie, en Milán, con el anuncio de la traición.",
                     "Sala de Arte Europeo", false, List.of()),
-            new DatoObra("La vocación de San Mateo", CARAVAGGIO, null, 1600,
+            new DatoObra("La vocación de San Mateo", CARAVAGGIO, "/obras/vocacion-san-mateo.jpg", 1600,
                     "Óleo sobre lienzo", "322 cm x 340 cm", "Barroco", "Religión",
                     "Cristo llama a Mateo desde la penumbra de una taberna, en un fuerte contraste de luz y sombra.",
                     "Sala de Arte Europeo", true, List.of()),
-            new DatoObra("Escena de calle, Berlín", KIRCHNER, null, 1913,
+            new DatoObra("Escena de calle, Berlín", KIRCHNER, "/obras/escena-calle-berlin.jpg", 1913,
                     "Óleo sobre lienzo", "120,6 cm x 91,1 cm", "Expresionismo", "Escena cotidiana",
                     "Dos mujeres en una calle berlinesa, con figuras angulosas y colores estridentes.",
                     "Depósito de conservación", false, List.of()),
-            new DatoObra("La traición de las imágenes", MAGRITTE, null, 1929,
+            new DatoObra("La traición de las imágenes", MAGRITTE, "/obras/traicion-imagenes.jpg", 1929,
                     "Óleo sobre lienzo", "60,3 cm x 81,1 cm", "Surrealismo", "Fantasía",
                     "Una pipa acompañada de la frase \"Esto no es una pipa\", que cuestiona la representación.",
                     "Sala de Arte Contemporáneo", true, List.of()),
-            new DatoObra("Las señoritas de Aviñón", PICASSO, null, 1907,
+            new DatoObra("Las señoritas de Aviñón", PICASSO, "/obras/senoritas-avinon.jpg", 1907,
                     "Óleo sobre lienzo", "243,9 cm x 233,7 cm", "Cubismo", "Retrato",
                     "Cinco figuras femeninas de rostros geométricos, considerada precursora del cubismo.",
                     "Sala de Arte Contemporáneo", false, List.of())
@@ -240,8 +240,16 @@ public class CatalogoDataInitializer {
     // valores editados a mano que no hay que pisar.
     private static void completarFaltantes(ObraEntity obra, DatoObra dato, ObraRepository obraRepository,
                                            ArtistaRepository artistaRepository) {
+        boolean cambio = false;
         if (obra.getTematica() == null) {
             obra.setTematica(dato.tematica());
+            cambio = true;
+        }
+        if (obra.getImagenUrl() == null && dato.imagenUrl() != null) {
+            obra.setImagenUrl(dato.imagenUrl());
+            cambio = true;
+        }
+        if (cambio) {
             obraRepository.save(obra);
         }
         if (completarArtista(obra.getArtista(), dato.artista())) {
