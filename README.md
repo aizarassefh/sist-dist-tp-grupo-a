@@ -48,7 +48,8 @@ Docker o instalada). Cada componente va en su propia terminal, en este orden.
 
 ### 1. Base de datos
 
-Con Docker, desde la raíz: `docker compose up -d`.
+Con Docker, desde la raíz: `docker compose up -d`. Esto levanta MariaDB y un
+Kafka KRaft de un nodo; Kafka es opcional para el backend.
 
 Sin Docker: instalar MariaDB 11.4 desde
 [mariadb.org](https://mariadb.org/download/) (sirve el ZIP portable) y crear
@@ -80,6 +81,18 @@ En Windows con cmd o PowerShell: `mvnw.cmd`. Queda en `http://localhost:8000`
 
 El perfil `local` (el que se activa si no se indica otro) apunta a
 `root`/`root` en el 3306; usarlo solo si la base local está configurada así.
+
+Para publicar y consumir novedades de eventos, iniciar el backend con
+`APP_KAFKA_ENABLED=true`. El broker por defecto es `localhost:9092`; se puede
+cambiar con `KAFKA_BOOTSTRAP_SERVERS`. Las novedades se consultan autenticado
+en `GET /api/novedades` y, por id, en `GET /api/novedades/{messageId}`.
+
+Si el backend se inicia desde IntelliJ, la variable `APP_KAFKA_ENABLED=true`
+debe agregarse en la configuración de ejecución; ponerla en una terminal no
+la agrega automáticamente a una ejecución iniciada por el IDE. Al arrancar
+correctamente deben aparecer los logs `Listener de novedades Kafka activo` y,
+después de crear/modificar/cancelar un evento, `Novedad publicada en Kafka` y
+`Novedad consumida desde Kafka`.
 
 ### 3. Motor NestJS
 

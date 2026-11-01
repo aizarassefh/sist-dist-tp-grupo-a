@@ -1,6 +1,7 @@
 /* Índice de estilos: el sistema común primero, después una hoja por pantalla. */
 @import './estilos/base.css';
 @import './estilos/navegacion.css';
+@import './estilos/novedades.css';
 @import './estilos/inicio.css';
 @import './estilos/acceso.css';
 @import './estilos/coleccion.css';

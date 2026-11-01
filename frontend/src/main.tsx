@@ -7,6 +7,10 @@ import { ApolloProvider } from '@apollo/client/react'
 import { HttpLink } from '@apollo/client/link/http'
 import { SetContextLink } from '@apollo/client/link/context'
 import { ErrorLink } from '@apollo/client/link/error'
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions'
+import { split } from '@apollo/client'
+import { getMainDefinition } from '@apollo/client/utilities'
+import { createClient } from 'graphql-ws'
 import { ServerError } from '@apollo/client/errors'
 
 import './index.css'
@@ -16,6 +20,23 @@ import { API_URL, avisarSesionVencida, obtenerToken } from './api/cliente'
 const httpLink = new HttpLink({
   uri: `${API_URL}/graphql`,
 })
+
+const wsLink = new GraphQLWsLink(createClient({
+  url: `${API_URL.replace(/^http/, 'ws')}/graphql`,
+  connectionParams: () => {
+    const token = obtenerToken()
+    return token ? { Authorization: `Bearer ${token}` } : {}
+  },
+}))
+
+const graphqlLink = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query)
+    return definition.kind === 'OperationDefinition' && definition.operation === 'subscription'
+  },
+  wsLink,
+  httpLink,
+)
 
 const authLink = new SetContextLink((prevContext) => {
   const token = obtenerToken()
@@ -38,7 +59,7 @@ const sesionVencidaLink = new ErrorLink(({ error }) => {
 })
 
 const client = new ApolloClient({
-  link: sesionVencidaLink.concat(authLink).concat(httpLink),
+  link: sesionVencidaLink.concat(authLink).concat(graphqlLink),
   cache: new InMemoryCache(),
 })
 

@@ -3,6 +3,22 @@ type Query {
   obra(id: ID!): Obra
 }
 
+type Subscription {
+  novedades: Novedad!
+}
+
+type Novedad {
+  messageId: ID!
+  type: TipoNovedad!
+  eventId: ID!
+  title: String!
+  fechaHora: String!
+  occurredAt: String!
+  responsibleUserId: ID!
+}
+
+enum TipoNovedad { ALTA MODIFICACION CANCELACION }
+
 type Obra { id: ID! titulo: String! artista: Artista! imagenUrl: String anioCreacion: Int tecnica: String dimensiones: String epoca: String descripcion: String ubicacion: String enExhibicion: Boolean! comentarios: [Comentario!]! }
 type Artista { nombre: String! biografia: String }
 type Comentario { usuario: String! texto: String! fecha: String! }

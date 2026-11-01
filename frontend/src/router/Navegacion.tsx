@@ -1,7 +1,15 @@
 import { Link, NavLink } from 'react-router-dom'
+import type { ReactElement } from 'react'
+import Novedades from '../components/Novedades'
+import type { Usuario } from '../types/modelos'
 import { ROLES, esGestor, tieneRol } from './roles'
 
-function Navegacion({ user, onLogout }) {
+interface NavegacionProps {
+  user: Usuario | null
+  onLogout: () => void
+}
+
+function Navegacion({ user, onLogout }: NavegacionProps): ReactElement {
   return (
     <nav className="navegacion">
       <Link to="/" className="navegacion-logo">Museo Virtual</Link>
@@ -27,6 +35,8 @@ function Navegacion({ user, onLogout }) {
         {esGestor(user) && (
           <NavLink to="/reporte" className="navegacion-link">Reporte</NavLink>
         )}
+
+        <Novedades />
 
         <span className="usuario-info">
           {user?.nombre} {user?.apellido} · {user?.rol}

@@ -73,3 +73,17 @@ export const REPORTE_ASISTENCIA_QUERY = gql`
     }
   }
 `
+
+export const NOVEDADES_SUBSCRIPTION = gql`
+  subscription Novedades {
+    novedades {
+      messageId
+      type
+      eventId
+      title
+      fechaHora
+      occurredAt
+      responsibleUserId
+    }
+  }
+`

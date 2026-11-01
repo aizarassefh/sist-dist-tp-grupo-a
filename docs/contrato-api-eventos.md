@@ -154,6 +154,44 @@ reporte:
 
 `GET /api/eventos/exportar?desde&hasta&tipo&estado` → `.xlsx`
 
+## Novedades y Kafka
+
+El backend publica en Kafka el topic `eventos.novedades` cada vez que una
+operación de eventos termina correctamente. La publicación se realiza después
+del commit de la transacción, para no anunciar cambios que luego hayan sido
+rollbackeados. Los tipos son `ALTA`, `MODIFICACION` y `CANCELACION` (el DELETE
+de un evento se informa como cancelación).
+
+El mensaje JSON tiene este formato mínimo:
+
+```json
+{
+  "messageId": "c0a8012e-8d0e-4a0f-a8ea-3e6651c03f5e",
+  "type": "MODIFICACION",
+  "eventId": 7,
+  "title": "Recorrido por el arte barroco",
+  "fechaHora": "2026-10-03T15:00:00",
+  "occurredAt": "2026-09-25T14:32:10Z",
+  "responsibleUserId": 2
+}
+```
+
+El consumidor del backend persiste las novedades de forma idempotente en la
+tabla `NOVEDADES`. Las novedades se consultan autenticado mediante
+`GET /api/novedades?limite=20` y se muestran en el menú superior del frontend;
+al seleccionar una se navega al detalle del evento relacionado. El endpoint
+devuelve las novedades de todos los usuarios porque representan anuncios del
+museo, no una bandeja privada del usuario que ejecutó la operación.
+
+Para recibirlas en tiempo real, GraphQL expone la suscripción `novedades`
+sobre WebSocket en `ws://localhost:8000/graphql` (o `wss` en producción). El
+frontend usa esta suscripción y conserva la consulta REST como carga inicial y
+respaldo si el WebSocket todavía no está conectado.
+
+Kafka es opcional para el desarrollo (`APP_KAFKA_ENABLED=false` por defecto).
+Con `APP_KAFKA_ENABLED=true`, el broker se configura con
+`KAFKA_BOOTSTRAP_SERVERS` y el topic con `APP_KAFKA_TOPIC`.
+
 El backend todavía ignora esos parámetros. `PLAN.md` propone mover la
 exportación a `GET /api/reportes/asistencia/excel`, porque la consigna la
 ubica en el módulo de reportes; si se mueve, en el frontend es cambiar una

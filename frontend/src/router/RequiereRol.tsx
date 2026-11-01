@@ -1,9 +1,17 @@
 import { Link } from 'react-router-dom'
+import type { ReactNode } from 'react'
 import { tieneRol } from './roles'
+import type { Usuario } from '../types/modelos'
+
+interface RequiereRolProps {
+  usuario: Usuario | null
+  roles: string[]
+  children: ReactNode
+}
 
 // El backend es el que realmente protege los datos; esto evita que un
 // usuario sin permiso que escribe la URL a mano vea una pantalla rota.
-function RequiereRol({ usuario, roles, children }) {
+function RequiereRol({ usuario, roles, children }: RequiereRolProps): ReactNode {
   if (tieneRol(usuario, ...roles)) {
     return children
   }
