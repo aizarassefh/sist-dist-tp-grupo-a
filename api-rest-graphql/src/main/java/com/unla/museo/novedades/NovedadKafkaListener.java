@@ -35,6 +35,9 @@ public class NovedadKafkaListener {
     public void consumir(String payload) {
         try {
             NovedadEvento evento = objectMapper.readValue(payload, NovedadEvento.class);
+            if (evento.messageId() == null) {
+                throw new IllegalArgumentException("El mensaje de novedad no contiene messageId");
+            }
             if (!repository.existsById(evento.messageId())) {
                 NovedadEntity guardada = repository.save(new NovedadEntity(evento));
                 stream.publicar(guardada);
