@@ -75,17 +75,20 @@ class KafkaAuditoriaYNovedadesIntegrationTest {
     }
 
     @Test
-    @DisplayName("Procesa novedades de ALTA, MODIFICACION y CANCELACION en ambos consumidores independientes")
+    @DisplayName("Procesa novedades de ALTA, MODIFICACION y CANCELACION conservando datos anteriores y posteriores")
     void procesaOperacionesEnAmbosConsumidores() throws Exception {
         NovedadEvento alta = new NovedadEvento(
                 UUID.randomUUID(), NovedadTipo.ALTA, 10L, "Taller de Grabado",
-                LocalDateTime.of(2026, 11, 15, 16, 0), Instant.parse("2026-11-01T14:00:00Z"), 2L);
+                LocalDateTime.of(2026, 11, 15, 16, 0), Instant.parse("2026-11-01T14:00:00Z"), 2L,
+                null, "Título: Taller de Grabado | Cupo: 15");
         NovedadEvento modificacion = new NovedadEvento(
                 UUID.randomUUID(), NovedadTipo.MODIFICACION, 10L, "Taller de Grabado Actualizado",
-                LocalDateTime.of(2026, 11, 16, 17, 0), Instant.parse("2026-11-01T14:05:00Z"), 2L);
+                LocalDateTime.of(2026, 11, 16, 17, 0), Instant.parse("2026-11-01T14:05:00Z"), 2L,
+                "Título: Taller de Grabado | Cupo: 15", "Título: Taller de Grabado Actualizado | Cupo: 25");
         NovedadEvento cancelacion = new NovedadEvento(
                 UUID.randomUUID(), NovedadTipo.CANCELACION, 10L, "Taller de Grabado Actualizado",
-                LocalDateTime.of(2026, 11, 16, 17, 0), Instant.parse("2026-11-01T14:10:00Z"), 2L);
+                LocalDateTime.of(2026, 11, 16, 17, 0), Instant.parse("2026-11-01T14:10:00Z"), 2L,
+                "Título: Taller de Grabado Actualizado | Cupo: 25", null);
 
         for (NovedadEvento ev : List.of(alta, modificacion, cancelacion)) {
             String json = objectMapper.writeValueAsString(ev);
@@ -96,11 +99,11 @@ class KafkaAuditoriaYNovedadesIntegrationTest {
         assertThat(auditoriaRepository.count()).isEqualTo(3);
         assertThat(novedadRepository.count()).isEqualTo(3);
 
-        AuditoriaEventoEntity registroCancelacion = auditoriaRepository.findById(cancelacion.messageId()).orElseThrow();
-        assertThat(registroCancelacion.getType()).isEqualTo(NovedadTipo.CANCELACION);
-        assertThat(registroCancelacion.getEventId()).isEqualTo(10L);
-        assertThat(registroCancelacion.getResponsibleUserId()).isEqualTo(2L);
-        assertThat(registroCancelacion.getMessageJson()).contains("Taller de Grabado Actualizado");
+        AuditoriaEventoEntity registroModificacion = auditoriaRepository.findById(modificacion.messageId()).orElseThrow();
+        assertThat(registroModificacion.getType()).isEqualTo(NovedadTipo.MODIFICACION);
+        assertThat(registroModificacion.getMessageJson())
+                .contains("Título: Taller de Grabado | Cupo: 15")
+                .contains("Título: Taller de Grabado Actualizado | Cupo: 25");
     }
 
     @Test

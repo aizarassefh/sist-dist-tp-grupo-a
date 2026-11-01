@@ -54,10 +54,10 @@ public class EventoServiceImpl implements EventoService {
     private final NovedadPublisher novedadPublisher;
 
     public EventoServiceImpl(EventoRepository eventoRepository,
-                              InscripcionRepository inscripcionRepository,
-                              UsuarioActualService usuarioActualService,
-                              Clock clock,
-                              NovedadPublisher novedadPublisher) {
+                             InscripcionRepository inscripcionRepository,
+                             UsuarioActualService usuarioActualService,
+                             Clock clock,
+                             NovedadPublisher novedadPublisher) {
         this.eventoRepository = eventoRepository;
         this.inscripcionRepository = inscripcionRepository;
         this.usuarioActualService = usuarioActualService;
@@ -113,7 +113,7 @@ public class EventoServiceImpl implements EventoService {
     @Override
     @Transactional(readOnly = true)
     public List<FilaReporteEventoDTO> obtenerFilasParaReporte(LocalDate desde, LocalDate hasta, TipoEvento tipo,
-                                                               EstadoEvento estado) {
+                                                              EstadoEvento estado) {
         if (desde != null && hasta != null && desde.isAfter(hasta)) {
             throw new SolicitudInvalidaException("La fecha 'desde' no puede ser posterior a 'hasta'");
         }
@@ -147,7 +147,7 @@ public class EventoServiceImpl implements EventoService {
         EventoEntity eventoEntity = new EventoEntity();
         aplicar(eventoEntity, request, curador);
         EventoEntity guardado = eventoRepository.save(eventoEntity);
-        publicarNovedad(guardado, NovedadTipo.ALTA);
+        publicarNovedad(guardado, NovedadTipo.ALTA, null, resumirEstado(guardado));
         return new EventoDTO(guardado.getId(), guardado.getTitulo(), guardado.getDescripcion(), guardado.getTipo(),
                 guardado.getFechaHora(), guardado.getDuracionMinutos(), guardado.getCupoMaximo(),
                 PersonaDTO.desde(curador), 0L, false, List.of());
@@ -162,9 +162,10 @@ public class EventoServiceImpl implements EventoService {
         if (request.getCupoMaximo() < inscriptos) {
             throw new ConflictoException("El cupo no puede ser menor a la cantidad de inscriptos actuales");
         }
+        String estadoAnterior = resumirEstado(eventoEntity);
         aplicar(eventoEntity, request, curador);
         EventoEntity guardado = eventoRepository.save(eventoEntity);
-        publicarNovedad(guardado, NovedadTipo.MODIFICACION);
+        publicarNovedad(guardado, NovedadTipo.MODIFICACION, estadoAnterior, resumirEstado(guardado));
         List<PersonaDTO> inscriptosDTO = inscripcionRepository.findByEventoIdOrderByFechaInscripcionAsc(id).stream()
                 .map(inscripcion -> PersonaDTO.desde(inscripcion.getUsuario()))
                 .toList();
@@ -177,7 +178,7 @@ public class EventoServiceImpl implements EventoService {
     public void borrar(Long id) {
         EventoEntity eventoEntity = eventoRepository.buscarPorIdConBloqueo(id)
                 .orElseThrow(() -> new RecursoInexistenteException("El evento no existe"));
-        publicarNovedad(eventoEntity, NovedadTipo.CANCELACION);
+        publicarNovedad(eventoEntity, NovedadTipo.CANCELACION, resumirEstado(eventoEntity), null);
         eventoRepository.delete(eventoEntity);
     }
 
@@ -266,17 +267,14 @@ public class EventoServiceImpl implements EventoService {
     @Override
     @Transactional
     public EventoDTO modificarCupo(Long id, Integer nuevoCupo) {
-        // 1. Adquirir el evento usando el bloqueo pesimista que ya tenés definido
         EventoEntity eventoEntity = eventoRepository.buscarPorIdConBloqueo(id)
                 .orElseThrow(() -> new RecursoInexistenteException("El evento no existe"));
 
-        // 2. Rechazar cambios si el evento ya inició (usando el clock inyectado)
         LocalDateTime ahora = LocalDateTime.now(clock);
         if (!eventoEntity.getFechaHora().isAfter(ahora)) {
             throw new ConflictoException("No se puede modificar el cupo de un evento que ya inició");
         }
 
-        // 3. No bajar el cupo por debajo de la cantidad de inscriptos actuales
         long cantidadInscriptos = inscripcionRepository.countByEventoId(id);
         if (nuevoCupo < cantidadInscriptos) {
             throw new ConflictoException(
@@ -284,12 +282,11 @@ public class EventoServiceImpl implements EventoService {
             );
         }
 
-        // 4. Actualizar el valor y guardar
+        String estadoAnterior = resumirEstado(eventoEntity);
         eventoEntity.setCupoMaximo(nuevoCupo);
         EventoEntity guardado = eventoRepository.save(eventoEntity);
-        publicarNovedad(guardado, NovedadTipo.MODIFICACION);
+        publicarNovedad(guardado, NovedadTipo.MODIFICACION, estadoAnterior, resumirEstado(guardado));
 
-        // 5. Mapear a DTO recuperando la lista de inscriptos (idéntico a cómo lo hace tu método editar)
         List<PersonaDTO> inscriptosDTO = inscripcionRepository.findByEventoIdOrderByFechaInscripcionAsc(id).stream()
                 .map(inscripcion -> PersonaDTO.desde(inscripcion.getUsuario()))
                 .toList();
@@ -299,10 +296,20 @@ public class EventoServiceImpl implements EventoService {
                 PersonaDTO.desde(guardado.getCurador()), cantidadInscriptos, false, inscriptosDTO);
     }
 
-    private void publicarNovedad(EventoEntity evento, NovedadTipo tipo) {
+    private String resumirEstado(EventoEntity evento) {
+        return "Título: %s | Tipo: %s | Fecha: %s | Duración: %d min | Cupo: %d".formatted(
+                evento.getTitulo(),
+                evento.getTipo(),
+                evento.getFechaHora(),
+                evento.getDuracionMinutos(),
+                evento.getCupoMaximo());
+    }
+
+    private void publicarNovedad(EventoEntity evento, NovedadTipo tipo, String datosAnteriores, String datosPosteriores) {
         com.unla.museo.novedades.NovedadEvento novedad = new com.unla.museo.novedades.NovedadEvento(
                 java.util.UUID.randomUUID(), tipo, evento.getId(), evento.getTitulo(),
-                evento.getFechaHora(), java.time.Instant.now(clock), responsableActual(evento));
+                evento.getFechaHora(), java.time.Instant.now(clock), responsableActual(evento),
+                datosAnteriores, datosPosteriores);
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
@@ -315,12 +322,6 @@ public class EventoServiceImpl implements EventoService {
         }
     }
 
-    /**
-     * La novedad identifica al usuario que ejecutó la operación, no al curador
-     * elegido para el evento. El fallback mantiene el servicio utilizable desde
-     * procesos internos que no tienen un SecurityContext (por ejemplo, datos de
-     * ejemplo o tests).
-     */
     private Long responsableActual(EventoEntity evento) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()

@@ -13,12 +13,16 @@ interface RegistroAuditoria {
   messageJson: string
 }
 
+interface PayloadNovedad {
+  previousData?: string | null
+  newData?: string | null
+}
+
 const etiquetas: Record<TipoNovedad, string> = {
   ALTA: 'Alta de evento',
   MODIFICACION: 'Modificación de evento',
   CANCELACION: 'Cancelación de evento',
 }
-
 
 function fecha(value: string | null): string {
   if (!value) return '—'
@@ -28,6 +32,17 @@ function fecha(value: string | null): string {
   }).format(parsed)
 }
 
+function extraerCambios(messageJson: string): PayloadNovedad {
+  try {
+    const parsed = JSON.parse(messageJson) as PayloadNovedad
+    return {
+      previousData: parsed.previousData ?? null,
+      newData: parsed.newData ?? null,
+    }
+  } catch {
+    return {}
+  }
+}
 
 function HistorialAuditoria(): ReactElement {
   const [registros, setRegistros] = useState<RegistroAuditoria[]>([])
@@ -71,30 +86,39 @@ function HistorialAuditoria(): ReactElement {
                 <th>Operación</th>
                 <th>Evento</th>
                 <th>Fecha del evento</th>
+                <th>Detalle de cambios</th>
                 <th>Fecha de operación</th>
                 <th>Usuario responsable</th>
                 <th>Id. mensaje</th>
               </tr>
             </thead>
             <tbody>
-              {registros.map((registro) => (
-                <tr key={registro.messageId}>
-                  <td>{etiquetas[registro.type] ?? registro.type}</td>
-                  <td>{registro.title} <small>(#{registro.eventId})</small></td>
-                  <td>{fecha(registro.fechaHora)}</td>
-                  <td>{fecha(registro.occurredAt)}</td>
-                  <td>{registro.responsibleUserId ?? '—'}</td>
-                  <td><code>{registro.messageId}</code></td>
-                </tr>
-              ))}
+              {registros.map((registro) => {
+                const { previousData, newData } = extraerCambios(registro.messageJson)
+                return (
+                  <tr key={registro.messageId}>
+                    <td>{etiquetas[registro.type] ?? registro.type}</td>
+                    <td>{registro.title} <small>(#{registro.eventId})</small></td>
+                    <td>{fecha(registro.fechaHora)}</td>
+                    <td>
+                      {previousData && <div><small><strong>Antes:</strong> {previousData}</small></div>}
+                      {newData && <div><small><strong>Después:</strong> {newData}</small></div>}
+                      {!previousData && !newData && '—'}
+                    </td>
+                    <td>{fecha(registro.occurredAt)}</td>
+                    <td>{registro.responsibleUserId ?? '—'}</td>
+                    <td><code>{registro.messageId}</code></td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       )}
-    {!cargando && !error && registros.length > 0 && (
-      <p className="historial-aclaracion">Se muestran los {registros.length} registros más recientes.</p>
-    )}
-  </section>
+      {!cargando && !error && registros.length > 0 && (
+        <p className="historial-aclaracion">Se muestran los {registros.length} registros más recientes.</p>
+      )}
+    </section>
   )
 }
 
