@@ -175,3 +175,20 @@ node pruebas/e2e.mjs
 Hace login, recorre las cuatro funcionalidades nuevas a través del gateway
 verificando qué servicios llamó, y comprueba que lo de la Entrega 1 sigue
 respondiendo igual.
+
+## Historial de actividad (Kafka)
+
+Con Kafka habilitado, el backend publica las altas, modificaciones y
+cancelaciones de eventos en `eventos.novedades`. El consumidor `museo-novedades`
+actualiza la bandeja de novedades y el consumidor independiente
+`museo-auditoria` persiste el historial en `HISTORIAL_EVENTOS`.
+
+Los usuarios con rol Curador o Administrador pueden consultar el historial
+mediante `GET /api/auditoria/eventos?limite=50` o desde la opción **Historial**
+del frontend. La autorización se verifica tanto en la ruta de la aplicación como
+en el backend.
+
+La configuración del topic, grupo de auditoría, estrategia idempotente,
+reintentos y dead-letter topic está documentada en
+[`docs/contrato-api-eventos.md`](docs/contrato-api-eventos.md), sección
+**Historial de auditoría (Hito 3)**.

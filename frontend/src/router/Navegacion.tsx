@@ -33,7 +33,10 @@ function Navegacion({ user, onLogout }: NavegacionProps): ReactElement {
         <NavLink to="/explorar" className="navegacion-link">Explorar</NavLink>
 
         {esGestor(user) && (
-          <NavLink to="/reporte" className="navegacion-link">Reporte</NavLink>
+          <>
+            <NavLink to="/reporte" className="navegacion-link">Reporte</NavLink>
+            <NavLink to="/historial" className="navegacion-link">Historial</NavLink>
+          </>
         )}
 
         <Novedades />

@@ -192,6 +192,44 @@ Kafka es opcional para el desarrollo (`APP_KAFKA_ENABLED=false` por defecto).
 Con `APP_KAFKA_ENABLED=true`, el broker se configura con
 `KAFKA_BOOTSTRAP_SERVERS` y el topic con `APP_KAFKA_TOPIC`.
 
+### Historial de auditoría (Hito 3)
+
+El backend mantiene dos consumidores Kafka independientes, cada uno con un grupo
+propio, sobre el topic `eventos.novedades`:
+
+- `museo-novedades`: persiste las novedades para la interfaz del museo en
+  `NOVEDADES` y publica la suscripción GraphQL.
+- `museo-auditoria`: persiste los acontecimientos recibidos en
+  `HISTORIAL_EVENTOS`. Este consumidor no escribe directamente el servicio de
+  gestión de eventos.
+
+El endpoint `GET /api/auditoria/eventos?limite=50` devuelve los registros más
+recientes (límite entre 1 y 200) y requiere JWT con rol `CURADOR` o
+`ADMINISTRADOR`. La pantalla `/historial` del frontend está restringida a esos
+roles; la autorización también se aplica en el backend.
+
+Cada registro conserva `messageId`, tipo de operación, id y título del evento,
+fecha/hora del evento, fecha de la operación, usuario responsable y el JSON
+original del mensaje. La clave primaria `messageId` hace idempotente la
+persistencia: si se reconsume un mensaje ya registrado, no se crea otro
+registro. El formato actual del mensaje no contiene una instantánea previa y
+posterior del evento, por lo que el historial registra el acontecimiento, no un
+comparativo de campos modificados.
+
+El listener persiste el registro en una transacción; el listener container
+confirma el offset después de que el método retorna correctamente. Si se corta
+la ejecución tras el commit de base de datos y antes de confirmar el offset,
+Kafka puede entregar el mensaje nuevamente y la clave primaria evita duplicarlo.
+Los errores se reintentan tres veces con un segundo de espera. Agotados los
+reintentos, el recuperador publica el mensaje en el topic de dead-letter
+`eventos.novedades.DLT` (o `<APP_KAFKA_TOPIC>.DLT`). Los mensajes en DLT
+requieren inspección y republicación manual; no se descartan como procesados en
+el topic original sin conservar una copia.
+
+El grupo de auditoría puede configurarse con `KAFKA_AUDIT_CONSUMER_GROUP`.
+Para habilitar el flujo se usa `APP_KAFKA_ENABLED=true` y el broker se configura
+con `KAFKA_BOOTSTRAP_SERVERS`; el topic se configura con `APP_KAFKA_TOPIC`.
+
 El backend todavía ignora esos parámetros. `PLAN.md` propone mover la
 exportación a `GET /api/reportes/asistencia/excel`, porque la consigna la
 ubica en el módulo de reportes; si se mueve, en el frontend es cambiar una

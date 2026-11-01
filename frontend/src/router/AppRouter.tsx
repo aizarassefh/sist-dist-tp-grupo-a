@@ -6,6 +6,7 @@ import DetalleEvento from '../pages/DetalleEvento'
 import EditarEvento from '../pages/EditarEvento'
 import FiltrosFavoritos from '../pages/FiltrosFavoritos'
 import ReporteAsistencia from '../components/ReporteAsistencia'
+import HistorialAuditoria from '../pages/HistorialAuditoria'
 import Recorridos from '../pages/Recorridos'
 import Comparar from '../pages/Comparar'
 import Recomendaciones from '../pages/Recomendaciones'
@@ -81,6 +82,14 @@ function RutasPrivadas({ user, onLogout }) {
           element={
             <RequiereRol usuario={user} roles={[ROLES.CURADOR, ROLES.ADMINISTRADOR]}>
               <ReporteAsistencia />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="/historial"
+          element={
+            <RequiereRol usuario={user} roles={[ROLES.CURADOR, ROLES.ADMINISTRADOR]}>
+              <HistorialAuditoria />
             </RequiereRol>
           }
         />

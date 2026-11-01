@@ -7,6 +7,9 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.util.backoff.FixedBackOff;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,10 +21,16 @@ public class NovedadKafkaConfig {
     @Bean
     @ConditionalOnProperty(name = "app.kafka.enabled", havingValue = "true")
     ConcurrentKafkaListenerContainerFactory<String, String> novedadesKafkaListenerContainerFactory(
-            ConsumerFactory<String, String> consumerFactory) {
-            ConcurrentKafkaListenerContainerFactory<String, String> factory =
+            ConsumerFactory<String, String> consumerFactory,
+            KafkaTemplate<String, String> kafkaTemplate) {
+        ConcurrentKafkaListenerContainerFactory<String, String> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
+        // Tres reintentos con espera de 1 s. Si sigue fallando, se publica en
+        // <topic>.DLT en lugar de descartar silenciosamente el acontecimiento.
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate);
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 3L));
+        factory.setCommonErrorHandler(errorHandler);
         return factory;
     }
 

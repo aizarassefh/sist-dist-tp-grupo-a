@@ -1,0 +1,9 @@
+
+.historial-tabla-contenedor { overflow-x: auto; border-top: 1px solid var(--tinta); }
+.historial-tabla { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+.historial-tabla th { padding: 12px 10px; color: var(--tinta-tenue); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+.historial-tabla td { padding: 14px 10px; border-top: 1px solid var(--linea); vertical-align: top; }
+.historial-tabla code { display: inline-block; max-width: 180px; overflow-wrap: anywhere; font-size: 11px; color: var(--tinta-suave); }
+.historial-tabla small { color: var(--tinta-tenue); }
+.historial-error { color: var(--error); }
+.historial-aclaracion { color: var(--tinta-tenue); font-size: 13px; }
