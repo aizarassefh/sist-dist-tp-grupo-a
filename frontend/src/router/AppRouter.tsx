@@ -7,6 +7,8 @@ import EditarEvento from '../pages/EditarEvento'
 import FiltrosFavoritos from '../pages/FiltrosFavoritos'
 import ReporteAsistencia from '../components/ReporteAsistencia'
 import HistorialAuditoria from '../pages/HistorialAuditoria'
+import Notificaciones from '../pages/Notificaciones'
+import Mensajeria from '../pages/Mensajeria'
 import Recorridos from '../pages/Recorridos'
 import Comparar from '../pages/Comparar'
 import Recomendaciones from '../pages/Recomendaciones'
@@ -90,6 +92,22 @@ function RutasPrivadas({ user, onLogout }) {
           element={
             <RequiereRol usuario={user} roles={[ROLES.CURADOR, ROLES.ADMINISTRADOR]}>
               <HistorialAuditoria />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="/notificaciones"
+          element={
+            <RequiereRol usuario={user} roles={[ROLES.VISITANTE]}>
+              <Notificaciones />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="/mensajeria"
+          element={
+            <RequiereRol usuario={user} roles={[ROLES.CURADOR, ROLES.ADMINISTRADOR]}>
+              <Mensajeria usuario={user} />
             </RequiereRol>
           }
         />

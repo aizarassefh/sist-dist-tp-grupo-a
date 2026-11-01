@@ -9,27 +9,85 @@ export interface Usuario {
 
 export type TipoNovedad = 'ALTA' | 'MODIFICACION' | 'CANCELACION'
 
-export interface Novedad {
-  messageId: string
-  type: TipoNovedad
-  eventId: number | string
-  title: string
+export interface EventoDto {
+  id: number
+  titulo: string
+  descripcion: string
+  tipo: string
   fechaHora: string
-  occurredAt: string
-  responsibleUserId: number | string
+  duracionMinutos: number
+  cupoMaximo: number
+  // Opcional: los eventos anteriores a la Entrega 3 no lo tienen.
+  movimiento?: string | null
+  curadorResponsable: { id: number; nombre: string }
 }
 
-export function esNovedad(valor: unknown): valor is Novedad {
-  if (typeof valor !== 'object' || valor === null) return false
+// Notificaciones del visitante (GET /api/notificaciones)
+export interface Notificacion {
+  id: number
+  tipo: TipoNovedad
+  idEvento: number
+  tituloEvento: string
+  mensaje: string
+  fechaOperacion: string
+  leida: boolean
+}
 
-  const novedad = valor as Record<string, unknown>
-  return (
-    typeof novedad.messageId === 'string' &&
-    (novedad.type === 'ALTA' || novedad.type === 'MODIFICACION' || novedad.type === 'CANCELACION') &&
-    (typeof novedad.eventId === 'number' || typeof novedad.eventId === 'string') &&
-    typeof novedad.title === 'string' &&
-    typeof novedad.fechaHora === 'string' &&
-    typeof novedad.occurredAt === 'string' &&
-    (typeof novedad.responsibleUserId === 'number' || typeof novedad.responsibleUserId === 'string')
-  )
+export interface RespuestaNotificaciones {
+  noLeidas: number
+  notificaciones: Notificacion[]
+}
+
+// Foto del evento que viaja dentro de la novedad (docs/contrato-mensajeria.md)
+export interface EventoHistorial {
+  id: number
+  titulo: string
+  descripcion: string
+  tipo: string
+  fechaHora: string
+  duracionMinutos: number
+  cupoMaximo: number
+  movimiento: string | null
+  idCurador: number
+  nombreCurador: string
+  idsInscriptos: number[]
+}
+
+export interface RegistroHistorial {
+  idMensaje: string
+  tipo: TipoNovedad
+  idEvento: number
+  tituloEvento: string
+  fechaHoraEvento: string
+  fechaOperacion: string
+  usuarioResponsable: { id: number; nombre: string } | null
+  camposModificados: string[]
+  datosAnteriores: EventoHistorial | null
+  datosPosteriores: EventoHistorial | null
+  fechaProcesamiento: string
+}
+
+export interface EstadoConsumidor {
+  consumidor: string
+  procesados: number
+  faltantes: string[]
+}
+
+export interface ConsistenciaMensajeria {
+  generados: number
+  publicados: number
+  pendientesDePublicar: number
+  consumidores: EstadoConsumidor[]
+  fallidosPendientes: number
+  consistente: boolean
+}
+
+export interface MensajeFallido {
+  id: number
+  idMensaje: string | null
+  consumidor: string
+  error: string
+  contenido: string
+  fechaRecepcion: string
+  estado: 'PENDIENTE' | 'REPROCESADO'
 }

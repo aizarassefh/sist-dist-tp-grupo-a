@@ -1,0 +1,94 @@
+/* =========================
+   NOTIFICACIONES
+   Una lista entre líneas, como el resto de las pantallas: lo no leído se
+   distingue por una marca lateral y no por un fondo que compita con el texto.
+   ========================= */
+
+.contador-notificaciones {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: var(--espacio-2);
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--acento);
+  color: var(--papel-claro);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.aclaracion-eventual {
+  margin: 0 0 var(--espacio-4);
+  color: var(--tinta-tenue);
+  font-size: 13px;
+}
+
+.notificaciones-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-4);
+  padding: var(--espacio-4) 0;
+  border-top: 1px solid var(--tinta);
+}
+
+.notificaciones-filtro {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  color: var(--tinta-suave);
+  font-size: 14px;
+}
+
+.notificaciones-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notificacion {
+  padding: var(--espacio-5) var(--espacio-4);
+  border-top: 1px solid var(--linea);
+  border-left: 3px solid transparent;
+}
+
+.notificacion-nueva {
+  border-left-color: var(--acento);
+}
+
+.notificacion-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+  margin-bottom: var(--espacio-2);
+  font-size: 12px;
+}
+
+.notificacion-tipo {
+  color: var(--acento-oscuro);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.notificacion-fecha {
+  color: var(--tinta-tenue);
+}
+
+.notificacion-evento {
+  margin: 0 0 var(--espacio-2);
+  font-size: 22px;
+}
+
+.notificacion-evento a {
+  color: var(--tinta);
+}
+
+.notificacion-mensaje {
+  margin: 0 0 var(--espacio-3);
+  color: var(--tinta-suave);
+}

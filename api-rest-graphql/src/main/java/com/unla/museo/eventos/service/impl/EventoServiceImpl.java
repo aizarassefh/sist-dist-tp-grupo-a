@@ -18,18 +18,16 @@ import com.unla.museo.eventos.dto.FilaReporteEventoDTO;
 import com.unla.museo.eventos.dto.PaginaEventosDTO;
 import com.unla.museo.eventos.dto.PersonaDTO;
 import com.unla.museo.seguridad.service.UsuarioActualService;
-import com.unla.museo.novedades.NovedadPublisher;
-import com.unla.museo.novedades.NovedadTipo;
+import com.unla.museo.mensajeria.EventoFoto;
+import com.unla.museo.mensajeria.NovedadTipo;
+import com.unla.museo.mensajeria.SalidaDeNovedades;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -51,18 +49,18 @@ public class EventoServiceImpl implements EventoService {
     private final InscripcionRepository inscripcionRepository;
     private final UsuarioActualService usuarioActualService;
     private final Clock clock;
-    private final NovedadPublisher novedadPublisher;
+    private final SalidaDeNovedades salidaDeNovedades;
 
     public EventoServiceImpl(EventoRepository eventoRepository,
                              InscripcionRepository inscripcionRepository,
                              UsuarioActualService usuarioActualService,
                              Clock clock,
-                             NovedadPublisher novedadPublisher) {
+                             SalidaDeNovedades salidaDeNovedades) {
         this.eventoRepository = eventoRepository;
         this.inscripcionRepository = inscripcionRepository;
         this.usuarioActualService = usuarioActualService;
         this.clock = clock;
-        this.novedadPublisher = novedadPublisher;
+        this.salidaDeNovedades = salidaDeNovedades;
     }
 
     @Override
@@ -104,7 +102,8 @@ public class EventoServiceImpl implements EventoService {
                         PersonaDTO.desde(evento.getCurador()),
                         conteos.getOrDefault(evento.getId(), 0L),
                         inscriptoDelUsuario.contains(evento.getId()),
-                        null))
+                        null,
+                        evento.getMovimiento()))
                 .toList();
 
         return new PaginaEventosDTO(items, paginaEfectiva, tamanioEfectivo, paginaDeEventos.getTotalElements());
@@ -147,10 +146,10 @@ public class EventoServiceImpl implements EventoService {
         EventoEntity eventoEntity = new EventoEntity();
         aplicar(eventoEntity, request, curador);
         EventoEntity guardado = eventoRepository.save(eventoEntity);
-        publicarNovedad(guardado, NovedadTipo.ALTA, null, resumirEstado(guardado));
+        salidaDeNovedades.registrar(NovedadTipo.ALTA, null, fotoDe(guardado, List.of()));
         return new EventoDTO(guardado.getId(), guardado.getTitulo(), guardado.getDescripcion(), guardado.getTipo(),
                 guardado.getFechaHora(), guardado.getDuracionMinutos(), guardado.getCupoMaximo(),
-                PersonaDTO.desde(curador), 0L, false, List.of());
+                PersonaDTO.desde(curador), 0L, false, List.of(), guardado.getMovimiento());
     }
 
     @Override
@@ -162,23 +161,25 @@ public class EventoServiceImpl implements EventoService {
         if (request.getCupoMaximo() < inscriptos) {
             throw new ConflictoException("El cupo no puede ser menor a la cantidad de inscriptos actuales");
         }
-        String estadoAnterior = resumirEstado(eventoEntity);
+        List<InscripcionEntity> inscripciones = inscripcionRepository.findByEventoIdOrderByFechaInscripcionAsc(id);
+        List<Long> idsInscriptos = idsDe(inscripciones);
+        // La foto anterior se arma antes de aplicar: la entidad se modifica en el lugar.
+        EventoFoto anterior = fotoDe(eventoEntity, idsInscriptos);
         aplicar(eventoEntity, request, curador);
         EventoEntity guardado = eventoRepository.save(eventoEntity);
-        publicarNovedad(guardado, NovedadTipo.MODIFICACION, estadoAnterior, resumirEstado(guardado));
-        List<PersonaDTO> inscriptosDTO = inscripcionRepository.findByEventoIdOrderByFechaInscripcionAsc(id).stream()
-                .map(inscripcion -> PersonaDTO.desde(inscripcion.getUsuario()))
-                .toList();
+        salidaDeNovedades.registrar(NovedadTipo.MODIFICACION, anterior, fotoDe(guardado, idsInscriptos));
         return new EventoDTO(guardado.getId(), guardado.getTitulo(), guardado.getDescripcion(), guardado.getTipo(),
                 guardado.getFechaHora(), guardado.getDuracionMinutos(), guardado.getCupoMaximo(),
-                PersonaDTO.desde(curador), inscriptos, false, inscriptosDTO);
+                PersonaDTO.desde(curador), inscriptos, false, personasDe(inscripciones), guardado.getMovimiento());
     }
 
     @Override
     public void borrar(Long id) {
         EventoEntity eventoEntity = eventoRepository.buscarPorIdConBloqueo(id)
                 .orElseThrow(() -> new RecursoInexistenteException("El evento no existe"));
-        publicarNovedad(eventoEntity, NovedadTipo.CANCELACION, resumirEstado(eventoEntity), null);
+        // Los inscriptos van en la foto porque el borrado los elimina junto con el evento.
+        EventoFoto anterior = fotoDe(eventoEntity, idsDe(inscripcionRepository.findByEventoIdOrderByFechaInscripcionAsc(id)));
+        salidaDeNovedades.registrar(NovedadTipo.CANCELACION, anterior, null);
         eventoRepository.delete(eventoEntity);
     }
 
@@ -225,6 +226,9 @@ public class EventoServiceImpl implements EventoService {
         eventoEntity.setDuracionMinutos(request.getDuracionMinutos());
         eventoEntity.setCupoMaximo(request.getCupoMaximo());
         eventoEntity.setCurador(curador);
+        // En blanco equivale a sin movimiento: así "" y null no figuran como un cambio.
+        eventoEntity.setMovimiento(request.getMovimiento() == null || request.getMovimiento().isBlank()
+                ? null : request.getMovimiento().trim());
     }
 
     private EventoDTO mapearConDetalle(EventoEntity eventoEntity, Authentication authentication) {
@@ -242,7 +246,8 @@ public class EventoServiceImpl implements EventoService {
 
         return new EventoDTO(eventoEntity.getId(), eventoEntity.getTitulo(), eventoEntity.getDescripcion(), eventoEntity.getTipo(),
                 eventoEntity.getFechaHora(), eventoEntity.getDuracionMinutos(), eventoEntity.getCupoMaximo(),
-                PersonaDTO.desde(eventoEntity.getCurador()), cantidadInscriptos, inscripto, inscriptos);
+                PersonaDTO.desde(eventoEntity.getCurador()), cantidadInscriptos, inscripto, inscriptos,
+                eventoEntity.getMovimiento());
     }
 
     private Map<Long, Long> contarInscriptosPorEvento(List<Long> ids) {
@@ -282,57 +287,30 @@ public class EventoServiceImpl implements EventoService {
             );
         }
 
-        String estadoAnterior = resumirEstado(eventoEntity);
+        List<InscripcionEntity> inscripciones = inscripcionRepository.findByEventoIdOrderByFechaInscripcionAsc(id);
+        List<Long> idsInscriptos = idsDe(inscripciones);
+        EventoFoto anterior = fotoDe(eventoEntity, idsInscriptos);
         eventoEntity.setCupoMaximo(nuevoCupo);
         EventoEntity guardado = eventoRepository.save(eventoEntity);
-        publicarNovedad(guardado, NovedadTipo.MODIFICACION, estadoAnterior, resumirEstado(guardado));
-
-        List<PersonaDTO> inscriptosDTO = inscripcionRepository.findByEventoIdOrderByFechaInscripcionAsc(id).stream()
-                .map(inscripcion -> PersonaDTO.desde(inscripcion.getUsuario()))
-                .toList();
+        salidaDeNovedades.registrar(NovedadTipo.MODIFICACION, anterior, fotoDe(guardado, idsInscriptos));
 
         return new EventoDTO(guardado.getId(), guardado.getTitulo(), guardado.getDescripcion(), guardado.getTipo(),
                 guardado.getFechaHora(), guardado.getDuracionMinutos(), guardado.getCupoMaximo(),
-                PersonaDTO.desde(guardado.getCurador()), cantidadInscriptos, false, inscriptosDTO);
+                PersonaDTO.desde(guardado.getCurador()), cantidadInscriptos, false, personasDe(inscripciones),
+                guardado.getMovimiento());
     }
 
-    private String resumirEstado(EventoEntity evento) {
-        return "Título: %s | Tipo: %s | Fecha: %s | Duración: %d min | Cupo: %d".formatted(
-                evento.getTitulo(),
-                evento.getTipo(),
-                evento.getFechaHora(),
-                evento.getDuracionMinutos(),
-                evento.getCupoMaximo());
+    private static List<Long> idsDe(List<InscripcionEntity> inscripciones) {
+        return inscripciones.stream().map(inscripcion -> inscripcion.getUsuario().getId()).toList();
     }
 
-    private void publicarNovedad(EventoEntity evento, NovedadTipo tipo, String datosAnteriores, String datosPosteriores) {
-        com.unla.museo.novedades.NovedadEvento novedad = new com.unla.museo.novedades.NovedadEvento(
-                java.util.UUID.randomUUID(), tipo, evento.getId(), evento.getTitulo(),
-                evento.getFechaHora(), java.time.Instant.now(clock), responsableActual(evento),
-                datosAnteriores, datosPosteriores);
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    novedadPublisher.publicar(novedad);
-                }
-            });
-        } else {
-            novedadPublisher.publicar(novedad);
-        }
+    private static List<PersonaDTO> personasDe(List<InscripcionEntity> inscripciones) {
+        return inscripciones.stream().map(inscripcion -> PersonaDTO.desde(inscripcion.getUsuario())).toList();
     }
 
-    private Long responsableActual(EventoEntity evento) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()
-                && authentication.getName() != null
-                && !"anonymousUser".equals(authentication.getName())) {
-            try {
-                return usuarioActualService.obtenerPorEmail(authentication.getName()).getId();
-            } catch (RuntimeException ignored) {
-                // El evento sigue siendo válido; se usa el curador como fallback.
-            }
-        }
-        return evento.getCurador().getId();
+    private static EventoFoto fotoDe(EventoEntity evento, List<Long> idsInscriptos) {
+        return new EventoFoto(evento.getId(), evento.getTitulo(), evento.getDescripcion(), evento.getTipo().name(),
+                evento.getFechaHora(), evento.getDuracionMinutos(), evento.getCupoMaximo(), evento.getMovimiento(),
+                evento.getCurador().getId(), PersonaDTO.desde(evento.getCurador()).nombre(), idsInscriptos);
     }
 }

@@ -42,7 +42,8 @@ guiadas") lo pone el frontend, y el Excel usa el mismo nombre para la hoja.
   "curadorResponsable": { "id": 2, "nombre": "Juan Perez" },
   "cantidadInscriptos": 5,
   "inscripto": true,
-  "inscriptos": [ { "id": 3, "nombre": "Carlos Hernandez" } ]
+  "inscriptos": [ { "id": 3, "nombre": "Carlos Hernandez" } ],
+  "movimiento": "Barroco"
 }
 ```
 
@@ -52,6 +53,9 @@ guiadas") lo pone el frontend, y el Excel usa el mismo nombre para la hoja.
   **solo en el detalle** y **solo si quien pregunta es CURADOR o
   ADMINISTRADOR**; para el resto, y en el listado, el campo se omite y
   alcanza con `cantidadInscriptos`.
+- `movimiento`: movimiento artístico del evento; `null` si no tiene. Es el que
+  se cruza con las preferencias de los visitantes para avisarles de un evento
+  nuevo (ver `contrato-mensajeria.md`).
 - `nombre` es nombre y apellido. No exponer email, teléfono ni hash.
 
 ## Endpoints de eventos
@@ -102,11 +106,14 @@ Mismo cuerpo para `POST` y `PUT`:
   "fechaHora": "2026-10-03T15:00:00",
   "duracionMinutos": 90,
   "cupoMaximo": 20,
-  "curadorId": 2
+  "curadorId": 2,
+  "movimiento": "Barroco"
 }
 ```
 
 `curadorId` tiene que ser un usuario con rol CURADOR; si no, 400.
+
+`movimiento` es opcional (hasta 100 caracteres).
 
 ## Filtros favoritos
 
@@ -154,86 +161,18 @@ reporte:
 
 `GET /api/eventos/exportar?desde&hasta&tipo&estado` → `.xlsx`
 
-## Novedades y Kafka
-
-El backend publica en Kafka el topic `eventos.novedades` cada vez que una
-operación de eventos termina correctamente. La publicación se realiza después
-del commit de la transacción, para no anunciar cambios que luego hayan sido
-rollbackeados. Los tipos son `ALTA`, `MODIFICACION` y `CANCELACION` (el DELETE
-de un evento se informa como cancelación).
-
-El mensaje JSON tiene este formato mínimo:
-
-```json
-{
-  "messageId": "c0a8012e-8d0e-4a0f-a8ea-3e6651c03f5e",
-  "type": "MODIFICACION",
-  "eventId": 7,
-  "title": "Recorrido por el arte barroco",
-  "fechaHora": "2026-10-03T15:00:00",
-  "occurredAt": "2026-09-25T14:32:10Z",
-  "responsibleUserId": 2
-}
-```
-
-El consumidor del backend persiste las novedades de forma idempotente en la
-tabla `NOVEDADES`. Las novedades se consultan autenticado mediante
-`GET /api/novedades?limite=20` y se muestran en el menú superior del frontend;
-al seleccionar una se navega al detalle del evento relacionado. El endpoint
-devuelve las novedades de todos los usuarios porque representan anuncios del
-museo, no una bandeja privada del usuario que ejecutó la operación.
-
-Para recibirlas en tiempo real, GraphQL expone la suscripción `novedades`
-sobre WebSocket en `ws://localhost:8000/graphql` (o `wss` en producción). El
-frontend usa esta suscripción y conserva la consulta REST como carga inicial y
-respaldo si el WebSocket todavía no está conectado.
-
-Kafka es opcional para el desarrollo (`APP_KAFKA_ENABLED=false` por defecto).
-Con `APP_KAFKA_ENABLED=true`, el broker se configura con
-`KAFKA_BOOTSTRAP_SERVERS` y el topic con `APP_KAFKA_TOPIC`.
-
-### Historial de auditoría (Hito 3)
-
-El backend mantiene dos consumidores Kafka independientes, cada uno con un grupo
-propio, sobre el topic `eventos.novedades`:
-
-- `museo-novedades`: persiste las novedades para la interfaz del museo en
-  `NOVEDADES` y publica la suscripción GraphQL.
-- `museo-auditoria`: persiste los acontecimientos recibidos en
-  `HISTORIAL_EVENTOS`. Este consumidor no escribe directamente el servicio de
-  gestión de eventos.
-
-El endpoint `GET /api/auditoria/eventos?limite=50` devuelve los registros más
-recientes (límite entre 1 y 200) y requiere JWT con rol `CURADOR` o
-`ADMINISTRADOR`. La pantalla `/historial` del frontend está restringida a esos
-roles; la autorización también se aplica en el backend.
-
-Cada registro conserva `messageId`, tipo de operación, id y título del evento,
-fecha/hora del evento, fecha de la operación, usuario responsable y el JSON
-original del mensaje. La clave primaria `messageId` hace idempotente la
-persistencia: si se reconsume un mensaje ya registrado, no se crea otro
-registro. El formato actual del mensaje no contiene una instantánea previa y
-posterior del evento, por lo que el historial registra el acontecimiento, no un
-comparativo de campos modificados.
-
-El listener persiste el registro en una transacción; el listener container
-confirma el offset después de que el método retorna correctamente. Si se corta
-la ejecución tras el commit de base de datos y antes de confirmar el offset,
-Kafka puede entregar el mensaje nuevamente y la clave primaria evita duplicarlo.
-Los errores se reintentan tres veces con un segundo de espera. Agotados los
-reintentos, el recuperador publica el mensaje en el topic de dead-letter
-`eventos.novedades.DLT` (o `<APP_KAFKA_TOPIC>.DLT`). Los mensajes en DLT
-requieren inspección y republicación manual; no se descartan como procesados en
-el topic original sin conservar una copia.
-
-El grupo de auditoría puede configurarse con `KAFKA_AUDIT_CONSUMER_GROUP`.
-Para habilitar el flujo se usa `APP_KAFKA_ENABLED=true` y el broker se configura
-con `KAFKA_BOOTSTRAP_SERVERS`; el topic se configura con `APP_KAFKA_TOPIC`.
-
 El backend todavía ignora esos parámetros. `PLAN.md` propone mover la
 exportación a `GET /api/reportes/asistencia/excel`, porque la consigna la
 ubica en el módulo de reportes; si se mueve, en el frontend es cambiar una
 constante en `src/components/ReporteAsistencia.jsx`.
+
+## Mensajería (Kafka)
+
+Alta, modificación y cancelación de eventos publican una novedad en Kafka que
+alimenta las notificaciones y el historial. El formato del mensaje, los
+procesos, la confiabilidad y los endpoints (`/api/notificaciones`,
+`/api/auditoria/eventos`, `/api/mensajeria/*`) están en
+[`contrato-mensajeria.md`](contrato-mensajeria.md).
 
 ## Códigos que el frontend espera
 

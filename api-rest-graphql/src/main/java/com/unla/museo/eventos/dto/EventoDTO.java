@@ -22,6 +22,7 @@ public record EventoDTO(
         PersonaDTO curadorResponsable,
         long cantidadInscriptos,
         boolean inscripto,
-        @JsonInclude(JsonInclude.Include.NON_NULL) List<PersonaDTO> inscriptos
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<PersonaDTO> inscriptos,
+        String movimiento
 ) {
 }

@@ -1,9 +1,15 @@
-
 .historial-tabla-contenedor { overflow-x: auto; border-top: 1px solid var(--tinta); }
 .historial-tabla { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
 .historial-tabla th { padding: 12px 10px; color: var(--tinta-tenue); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
 .historial-tabla td { padding: 14px 10px; border-top: 1px solid var(--linea); vertical-align: top; }
-.historial-tabla code { display: inline-block; max-width: 180px; overflow-wrap: anywhere; font-size: 11px; color: var(--tinta-suave); }
 .historial-tabla small { color: var(--tinta-tenue); }
-.historial-error { color: var(--error); }
 .historial-aclaracion { color: var(--tinta-tenue); font-size: 13px; }
+
+.historial-detalle summary { cursor: pointer; color: var(--acento-oscuro); }
+.historial-cambios { margin: var(--espacio-3) 0 0; min-width: 260px; }
+.historial-cambios > div { display: flex; flex-wrap: wrap; gap: var(--espacio-2); padding: var(--espacio-1) 0; }
+.historial-cambios dt { flex: 0 0 150px; color: var(--tinta-tenue); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+.historial-cambios dd { margin: 0; flex: 1 1 160px; overflow-wrap: anywhere; }
+.historial-antes { color: var(--tinta-suave); text-decoration: line-through; }
+.historial-despues { color: var(--ok); font-weight: 600; }
+.historial-sin-detalle { margin: var(--espacio-3) 0 0; color: var(--tinta-tenue); }

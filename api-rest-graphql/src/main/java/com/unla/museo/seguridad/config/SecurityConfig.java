@@ -81,6 +81,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/eventos/*").hasAnyRole(Roles.CURADOR, Roles.ADMIN)
                         .requestMatchers("/api/reportes/**").hasAnyRole(Roles.CURADOR, Roles.ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/auditoria/**").hasAnyRole(Roles.CURADOR, Roles.ADMIN)
+                        .requestMatchers("/api/notificaciones/**").hasRole(Roles.VISITANTE)
+                        .requestMatchers(HttpMethod.POST, "/api/mensajeria/fallidos/*/reprocesar").hasRole(Roles.ADMIN)
+                        .requestMatchers("/api/mensajeria/**").hasAnyRole(Roles.CURADOR, Roles.ADMIN)
                         // Todas las otras rutas requieren autenticación
                         .anyRequest().authenticated()
                 )

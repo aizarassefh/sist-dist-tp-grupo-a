@@ -36,4 +36,9 @@ public class EventoRequest {
 
     @NotNull(message = "Debe indicarse un curador responsable")
     private Long curadorId;
+
+    // Opcional: es el dato que cruza el aviso de "evento nuevo" con las
+    // preferencias de los visitantes.
+    @Size(max = 100, message = "El movimiento no puede superar los 100 caracteres")
+    private String movimiento;
 }

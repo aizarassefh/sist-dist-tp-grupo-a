@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ErrorApi, mensajeDeError, pedir } from '../api/cliente'
 import { aFechaHoraContrato, aValorInput } from '../fechas'
 import FormularioEvento from '../components/FormularioEvento'
+import type { EventoDto } from '../types/modelos'
 
 const VALORES_INICIALES = {
   titulo: '',
@@ -11,6 +12,7 @@ const VALORES_INICIALES = {
   fechaHora: '',
   duracionMinutos: '',
   cupoMaximo: '',
+  movimiento: '',
   curadorId: ''
 }
 
@@ -35,7 +37,7 @@ function EditarEvento() {
     let cancelado = false
 
     pedir(`/api/eventos/${id}`)
-      .then((datos) => {
+      .then((datos: EventoDto) => {
         if (cancelado) {
           return
         }
@@ -46,6 +48,7 @@ function EditarEvento() {
           fechaHora: aValorInput(datos.fechaHora),
           duracionMinutos: String(datos.duracionMinutos),
           cupoMaximo: String(datos.cupoMaximo),
+          movimiento: datos.movimiento ?? '',
           curadorId: String(datos.curadorResponsable.id)
         })
         setCargando(false)
@@ -87,6 +90,8 @@ function EditarEvento() {
       fechaHora: aFechaHoraContrato(valores.fechaHora),
       duracionMinutos: Number(valores.duracionMinutos),
       cupoMaximo: Number(valores.cupoMaximo),
+      // null y no omitirlo: al editar, vaciar el campo tiene que borrar el movimiento.
+      movimiento: valores.movimiento.trim() || null,
       curadorId: Number(valores.curadorId)
     }
 

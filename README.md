@@ -9,47 +9,46 @@ TP de Desarrollo de Software en Sistemas Distribuidos, UNLa. Grupo A.
 - **Entrega 2 (RPC):** recorridos personalizados, comparación de obras,
   recomendaciones y exploración por movimiento, que entran por un **API
   Gateway** y se resuelven con llamadas **gRPC** entre servicios.
+- **Entrega 3 (mensajería):** las altas, modificaciones y cancelaciones de
+  eventos publican novedades en **Kafka**; dos consumidores independientes
+  generan las notificaciones de los visitantes y el historial de actividad.
 
-El documento de la Entrega 2 (estrategia, diagramas, servicios, contratos,
-modelo de datos, pruebas) está en
-[`docs/entrega-2/Entrega-2-Grupo-A.pdf`](docs/entrega-2/Entrega-2-Grupo-A.pdf).
+Documentos de entrega: [`docs/entrega-2/Entrega-2-Grupo-A.pdf`](docs/entrega-2/Entrega-2-Grupo-A.pdf)
+y [`docs/entrega-3/Entrega-3-Grupo-A.pdf`](docs/entrega-3/Entrega-3-Grupo-A.pdf).
 
 ## Estructura
 
 ```text
-api-rest-graphql/   Backend Spring Boot: REST + GraphQL (Entrega 1, :8000) y
-                    servidor gRPC con CatalogoService, EventosService y
-                    UsuariosService (:9090)
-nestjs-service/     Motor de experiencias en NestJS/TypeScript: MotorService
-                    por gRPC (:9091). Recorridos, recomendaciones y comparación
-gateway/            API Gateway en Java/WebFlux (:8080): valida el JWT y
-                    orquesta las llamadas gRPC. Sin base ni lógica de negocio
+api-rest-graphql/   Backend Spring Boot. Un mismo jar con tres perfiles:
+                    - por defecto: REST + GraphQL (:8000), gRPC (:9090) y
+                      productor de novedades (outbox + publicador)
+                    - consumidor-notificaciones / consumidor-auditoria:
+                      procesos sin web que consumen de Kafka
+nestjs-service/     Motor de experiencias en NestJS/TypeScript (gRPC :9091)
+gateway/            API Gateway en Java/WebFlux (:8080)
 proto/              Contratos gRPC compartidos por Java y TypeScript
-frontend/           React + Vite (:5173)
-pruebas/e2e.mjs     Prueba de punta a punta contra todo levantado
-docs/               Contratos REST, colección de Postman y documento de entrega
+frontend/           React + TypeScript + Vite (:5173)
+kafka/              Scripts para levantar Kafka sin Docker
+pruebas/            Pruebas de punta a punta contra todo levantado
+docs/               Contratos REST, de mensajería y documentos de entrega
 ```
 
 ```text
-             ┌─ REST + GraphQL (Entrega 1) ─▶ backend :8000 ──┐
-React :5173 ─┤                                                 ├─ MariaDB
-             └─ REST /api/v2 (Entrega 2) ─▶ gateway :8080      │
-                                              │ gRPC           │
-                          ┌───────────────────┴──────┐         │
-                          ▼                          ▼         │
-             backend :9090 (Catalogo,       motor NestJS :9091 │
-             Eventos, Usuarios) ────────────────────────────────┘
+             ┌─ REST + GraphQL ─▶ backend :8000 ── outbox ─▶ Kafka :9092 ─┬─▶ consumidor de notificaciones ─┐
+React :5173 ─┤                      │  ▲ gRPC :9090                       └─▶ consumidor de auditoría ──────┤
+             └─ REST /api/v2 ─▶ gateway :8080 ─▶ motor NestJS :9091                                         │
+                                    │                                             MariaDB ◀──────────────────┘
 ```
 
 ## Cómo levantarlo
 
-Hace falta **JDK 21**, **Node 20.19+ o 22.12+** y **MariaDB 11.4** (con
-Docker o instalada). Cada componente va en su propia terminal, en este orden.
+Hace falta **JDK 21**, **Node 20.19+ o 22.12+**, **MariaDB 11.4** y **Kafka
+3.7**. MariaDB y Kafka pueden ir con Docker o sin él. Cada componente va en su
+propia terminal, en este orden.
 
 ### 1. Base de datos
 
-Con Docker, desde la raíz: `docker compose up -d`. Esto levanta MariaDB y un
-Kafka KRaft de un nodo; Kafka es opcional para el backend.
+Con Docker, desde la raíz: `docker compose up -d mariadb`.
 
 Sin Docker: instalar MariaDB 11.4 desde
 [mariadb.org](https://mariadb.org/download/) (sirve el ZIP portable) y crear
@@ -61,40 +60,75 @@ CREATE USER 'museo'@'localhost' IDENTIFIED BY 'museo';
 GRANT ALL PRIVILEGES ON museodb.* TO 'museo'@'localhost';
 ```
 
-Una base de la Entrega 1 sirve: al arrancar, el backend agrega las columnas y
-tablas nuevas y completa los datos de ejemplo que falten. Si la base corrió la
-primera versión de la rama gRPC, le quedan tablas sin uso
-(`preferencias_usuario`, `interacciones_usuario` y las de sus listas): no
-molestan y se pueden borrar.
+Una base de las entregas anteriores sirve: al arrancar, el backend agrega las
+columnas y tablas nuevas y completa los datos de ejemplo que falten. Si la base
+corrió versiones intermedias de las ramas, pueden quedar tablas sin uso
+(`preferencias_usuario`, `interacciones_usuario`, `NOVEDADES`,
+`HISTORIAL_EVENTOS`): no molestan y se pueden borrar.
 
-### 2. Backend (REST + GraphQL + gRPC)
+### 2. Kafka
+
+**Sin Docker (Windows, probado):** bajar
+[`kafka_2.13-3.7.0.tgz`](https://archive.apache.org/dist/kafka/3.7.0/kafka_2.13-3.7.0.tgz)
+y descomprimirlo dentro de `kafka/`, de modo que quede `kafka/kafka_2.13-3.7.0/`
+(está en el `.gitignore`). Solo necesita Java. Después:
+
+```bash
+kafka\levantar-kafka.cmd
+```
+
+En otra terminal, una sola vez:
+
+```bash
+kafka\crear-topics.cmd
+```
+
+Queda en `localhost:9092`, en modo KRaft (sin Zookeeper). La primera vez
+formatea `kafka/datos`. El script llama a Java directo porque los `.bat` de
+Kafka arman una línea más larga de lo que acepta `cmd`. `kafka/server.properties`
+desactiva el borrado de topics, la retención y la compactación: en Windows
+esas operaciones hacen que el broker se apague (lo comprobamos borrando un
+topic). Para empezar de cero, apagar Kafka y borrar `kafka/datos`.
+
+**Con Docker:** `docker compose up -d kafka`. Crea los topics solo al publicar,
+con 3 particiones. Esta variante no la pudimos probar.
+
+### 3. Backend y consumidores
 
 ```bash
 cd api-rest-graphql
-./mvnw spring-boot:run "-Dspring-boot.run.profiles=default"
+./mvnw package -DskipTests
 ```
 
-En Windows con cmd o PowerShell: `mvnw.cmd`. Queda en `http://localhost:8000`
-(REST y GraphQL) y en `localhost:9090` (gRPC). La base se configura con
-`DB_URL`, `DB_USUARIO` y `DB_CLAVE`; por defecto
-`jdbc:mariadb://localhost:3306/museodb` con `museo`/`museo`.
+Después, tres procesos con el mismo jar. Primero el principal, que crea el
+esquema de la base:
 
-El perfil `local` (el que se activa si no se indica otro) apunta a
+```bash
+java -jar target/museo-0.0.1-SNAPSHOT.jar --spring.profiles.active=default
+```
+
+```bash
+java -jar target/museo-0.0.1-SNAPSHOT.jar --spring.profiles.active=consumidor-notificaciones
+```
+
+```bash
+java -jar target/museo-0.0.1-SNAPSHOT.jar --spring.profiles.active=consumidor-auditoria
+```
+
+En Windows con cmd o PowerShell: `mvnw.cmd`. El principal queda en
+`http://localhost:8000` (REST y GraphQL) y `localhost:9090` (gRPC). Los
+consumidores no abren puertos: solo leen de Kafka y escriben en la base.
+
+Variables: `DB_URL`, `DB_USUARIO`, `DB_CLAVE` (por defecto
+`jdbc:mariadb://localhost:3306/museodb` con `museo`/`museo`),
+`KAFKA_BOOTSTRAP_SERVERS` (`localhost:9092`), `APP_KAFKA_ENABLED` (`true`;
+en `false` el backend no publica, para trabajar sin Kafka) y, para el
+consumidor de notificaciones, `BACKEND_GRPC` (`localhost:9090`).
+
+Sin `--spring.profiles.active` se activa el perfil `local`, que apunta a
 `root`/`root` en el 3306; usarlo solo si la base local está configurada así.
 
-Para publicar y consumir novedades de eventos, iniciar el backend con
-`APP_KAFKA_ENABLED=true`. El broker por defecto es `localhost:9092`; se puede
-cambiar con `KAFKA_BOOTSTRAP_SERVERS`. Las novedades se consultan autenticado
-en `GET /api/novedades` y, por id, en `GET /api/novedades/{messageId}`.
-
-Si el backend se inicia desde IntelliJ, la variable `APP_KAFKA_ENABLED=true`
-debe agregarse en la configuración de ejecución; ponerla en una terminal no
-la agrega automáticamente a una ejecución iniciada por el IDE. Al arrancar
-correctamente deben aparecer los logs `Listener de novedades Kafka activo` y,
-después de crear/modificar/cancelar un evento, `Novedad publicada en Kafka` y
-`Novedad consumida desde Kafka`.
-
-### 3. Motor NestJS
+### 4. Motor NestJS
 
 ```bash
 cd nestjs-service
@@ -105,21 +139,22 @@ npm start
 
 Escucha gRPC en `localhost:9091`. Lee los contratos de `../proto`.
 
-### 4. API Gateway
+### 5. API Gateway
 
 ```bash
 cd gateway
 ./mvnw spring-boot:run
 ```
 
-Queda en `http://localhost:8080`. Si se reinicia el backend o el motor con
-el gateway levantado, el gateway puede responder 503 durante unos segundos:
-el cliente gRPC reintenta la conexión esperando cada vez más entre intentos.
-Variables: `BACKEND_GRPC`
+Queda en `http://localhost:8080`. Variables: `BACKEND_GRPC`
 (`localhost:9090`), `MOTOR_GRPC` (`localhost:9091`), `JWT_SECRET` (la misma
 que el backend), `FRONTEND_URL` (para CORS).
 
-### 5. Frontend
+Si se reinicia el backend o el motor con el gateway o el consumidor de
+notificaciones levantados, sus clientes gRPC pueden fallar durante unos
+segundos: reintentan la conexión esperando cada vez más entre intentos.
+
+### 6. Frontend
 
 ```bash
 cd frontend
@@ -154,11 +189,14 @@ siempre queda como visitante.
 - **Entrega 2:** contrato REST del gateway en
   [`docs/contrato-api-gateway.md`](docs/contrato-api-gateway.md) y contratos
   gRPC en [`proto/`](proto/).
+- **Entrega 3:** topics, formato de las novedades, consumidores y endpoints de
+  notificaciones, historial y mensajería en
+  [`docs/contrato-mensajeria.md`](docs/contrato-mensajeria.md).
 
 ## Pruebas
 
-Tests de cada proyecto (no necesitan base ni otros servicios: el backend usa
-H2 en memoria y los servicios gRPC se prueban con servidores en memoria):
+Tests de cada proyecto (no necesitan base ni broker: el backend usa H2 y un
+Kafka embebido, y los servicios gRPC se prueban con servidores en memoria):
 
 ```bash
 cd api-rest-graphql && ./mvnw test
@@ -166,29 +204,18 @@ cd gateway && ./mvnw test
 cd nestjs-service && npm test
 ```
 
-Prueba de punta a punta, con todo levantado (pasos 1 a 4):
+Pruebas de punta a punta, con todo levantado:
 
 ```bash
 node pruebas/e2e.mjs
+node pruebas/e2e-kafka.mjs
 ```
 
-Hace login, recorre las cuatro funcionalidades nuevas a través del gateway
-verificando qué servicios llamó, y comprueba que lo de la Entrega 1 sigue
-respondiendo igual.
+La primera recorre las Entregas 1 y 2. La segunda crea, modifica y cancela un
+evento y espera la notificación y el historial que generan los consumidores;
+además inyecta en Kafka un mensaje duplicado y uno inválido, y verifica la
+consistencia entre lo publicado y lo procesado.
 
-## Historial de actividad (Kafka)
-
-Con Kafka habilitado, el backend publica las altas, modificaciones y
-cancelaciones de eventos en `eventos.novedades`. El consumidor `museo-novedades`
-actualiza la bandeja de novedades y el consumidor independiente
-`museo-auditoria` persiste el historial en `HISTORIAL_EVENTOS`.
-
-Los usuarios con rol Curador o Administrador pueden consultar el historial
-mediante `GET /api/auditoria/eventos?limite=50` o desde la opción **Historial**
-del frontend. La autorización se verifica tanto en la ruta de la aplicación como
-en el backend.
-
-La configuración del topic, grupo de auditoría, estrategia idempotente,
-reintentos y dead-letter topic está documentada en
-[`docs/contrato-api-eventos.md`](docs/contrato-api-eventos.md), sección
-**Historial de auditoría (Hito 3)**.
+Para ver el tratamiento de errores a mano, `kafka\publicar-mensaje-invalido.cmd`
+publica un mensaje sin `idMensaje`: los consumidores lo rechazan, va al DLT y
+aparece en la pantalla **Mensajería**.

@@ -50,6 +50,9 @@ backend al arrancar: están en `DataInitializer.java`.
 | `/recorridos` | visitante | Recorrido por las salas según tiempo, categorías y preferencias — gateway `POST /api/v2/recorridos` |
 | `/comparar` | logueados | Comparación de 2 a 6 obras, también desde `?obra=ID` — gateway `POST /api/v2/comparaciones` |
 | `/recomendaciones` | visitante | Editor de preferencias y obras recomendadas — gateway `/api/v2/preferencias`, `/api/v2/recomendaciones` |
+| `/notificaciones` | visitante | Avisos de eventos (alta según preferencias, cambios y cancelaciones de eventos en los que está inscripto); marcar una o todas como leídas — `GET /api/notificaciones`, `PATCH .../{id}/leida`, `PATCH .../leidas` |
+| `/historial` | curador, admin | Historial de altas, modificaciones y cancelaciones con filtros por tipo y evento, y detalle de campos anterior → posterior — `GET /api/auditoria/eventos` |
+| `/mensajeria` | curador, admin | Panel de consistencia de Kafka (generados, publicados, procesados por consumidor, faltantes), mensajes fallidos y "Reprocesar" (solo admin) — `GET /api/mensajeria/consistencia`, `GET .../fallidos`, `POST .../fallidos/{id}/reprocesar` |
 | `/explorar`, `/explorar/:movimiento` | logueados | Obras, artistas y eventos de un movimiento — gateway `/api/v2/exploraciones/{movimiento}` |
 
 En `/obra/:id`, el visitante registra una vista al abrir la obra y puede
@@ -81,6 +84,19 @@ Todas las pantallas se probaron en el navegador contra el backend real con
 MariaDB, con los tres roles: login, registro, sesión vencida, catálogo y
 ficha de obra, agenda de eventos, inscripción y cancelación, alta y edición
 de eventos, filtros favoritos, reporte y descarga del Excel.
+
+El formulario de eventos tiene un campo opcional "Movimiento artístico": el
+selector sale de `GET /api/v2/categorias` del gateway y, si no responde, pasa
+a un input de texto libre para no bloquear el alta.
+
+Las notificaciones son de consistencia eventual: las genera un consumidor de
+Kafka unos segundos después de la operación. Por eso el contador de la
+navegación (solo visitantes) se actualiza cada 20 segundos mientras la pestaña
+está visible, y las pantallas lo aclaran.
+
+Lo agregado en la Entrega 3 (notificaciones, historial, mensajería y el campo
+movimiento) **no se probó contra el backend**: compila y pasa el lint, pero las
+rutas nuevas no existían al escribirlo, así que no se ejecutó contra la API.
 
 Lo agregado en la Entrega 2 (pantallas del gateway, vista e interés en la
 ficha de obra) **no se probó contra un gateway real**: se verificó que

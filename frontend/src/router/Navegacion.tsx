@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
 import type { ReactElement } from 'react'
-import Novedades from '../components/Novedades'
+import IndicadorNotificaciones from '../components/IndicadorNotificaciones'
 import type { Usuario } from '../types/modelos'
 import { ROLES, esGestor, tieneRol } from './roles'
 
@@ -32,14 +32,15 @@ function Navegacion({ user, onLogout }: NavegacionProps): ReactElement {
 
         <NavLink to="/explorar" className="navegacion-link">Explorar</NavLink>
 
+        {tieneRol(user, ROLES.VISITANTE) && <IndicadorNotificaciones />}
+
         {esGestor(user) && (
           <>
             <NavLink to="/reporte" className="navegacion-link">Reporte</NavLink>
             <NavLink to="/historial" className="navegacion-link">Historial</NavLink>
+            <NavLink to="/mensajeria" className="navegacion-link">Mensajería</NavLink>
           </>
         )}
-
-        <Novedades />
 
         <span className="usuario-info">
           {user?.nombre} {user?.apellido} · {user?.rol}

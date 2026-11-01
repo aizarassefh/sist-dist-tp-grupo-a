@@ -1,0 +1,88 @@
+/* =========================
+   MENSAJERÍA
+   Reusa las cifras del reporte (.estadisticas) y la tabla del historial;
+   acá solo lo propio: el indicador de consistencia y los mensajes fallidos.
+   ========================= */
+
+.mensajeria-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-4);
+  padding: var(--espacio-4) 0;
+  border-top: 1px solid var(--tinta);
+}
+
+.mensajeria-barra .aclaracion-eventual {
+  margin: 0;
+}
+
+.mensajeria-indicador {
+  display: inline-block;
+  margin: var(--espacio-4) 0 var(--espacio-5);
+  padding: var(--espacio-2) var(--espacio-4);
+  border-left: 3px solid;
+  font-weight: 600;
+}
+
+.mensajeria-ok {
+  border-left-color: var(--ok);
+  color: var(--ok);
+}
+
+.mensajeria-pendiente {
+  border-left-color: var(--error);
+  background-color: #f7e6e3;
+  color: var(--error);
+}
+
+.mensajeria-cifras {
+  margin-bottom: var(--espacio-6);
+}
+
+.mensajeria-subtitulo {
+  margin: var(--espacio-6) 0 var(--espacio-3);
+  font-size: 26px;
+}
+
+.mensajeria-ids {
+  margin: var(--espacio-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+
+.mensajeria-fallidos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mensajeria-fallido {
+  padding: var(--espacio-5) var(--espacio-4);
+  border-top: 1px solid var(--linea);
+  border-left: 3px solid var(--error);
+}
+
+.mensajeria-error {
+  margin: 0 0 var(--espacio-2);
+  color: var(--error);
+}
+
+.mensajeria-id {
+  margin: 0 0 var(--espacio-2);
+  color: var(--tinta-tenue);
+  font-size: 12px;
+}
+
+.mensajeria-contenido {
+  max-height: 260px;
+  margin: var(--espacio-2) 0 var(--espacio-3);
+  padding: var(--espacio-3);
+  overflow: auto;
+  background: var(--papel-hundido);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

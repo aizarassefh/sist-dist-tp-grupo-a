@@ -1,0 +1,110 @@
+[
+  {
+    "titulo": "ALTA del evento 32 — partición 2, offset 3, clave \"32\"",
+    "mensaje": {
+      "idMensaje": "ce156e65-2ab0-4459-a0af-3af2fed2697d",
+      "versionEsquema": 1,
+      "tipo": "ALTA",
+      "idEvento": 32,
+      "tituloEvento": "Charla de prueba e2e 1793557650192",
+      "fechaHoraEvento": "2026-11-21T18:00:00",
+      "fechaOperacion": "2026-11-01T18:27:30.264746700Z",
+      "idUsuarioResponsable": 2,
+      "nombreUsuarioResponsable": "Juan Perez",
+      "eventoAnterior": null,
+      "eventoPosterior": {
+        "id": 32,
+        "titulo": "Charla de prueba e2e 1793557650192",
+        "descripcion": "Evento creado por pruebas/e2e-kafka.mjs",
+        "tipo": "CHARLA",
+        "fechaHora": "2026-11-21T18:00:00",
+        "duracionMinutos": 60,
+        "cupoMaximo": 20,
+        "movimiento": "Impresionismo",
+        "idCurador": 2,
+        "nombreCurador": "Juan Perez",
+        "idsInscriptos": []
+      },
+      "camposModificados": []
+    }
+  },
+  {
+    "titulo": "MODIFICACION del evento 32 — partición 2, offset 4, clave \"32\"",
+    "mensaje": {
+      "idMensaje": "2211ccee-761a-4cf8-9117-ea52449b6707",
+      "versionEsquema": 1,
+      "tipo": "MODIFICACION",
+      "idEvento": 32,
+      "tituloEvento": "Charla de prueba e2e 1793557650192",
+      "fechaHoraEvento": "2026-11-21T19:30:00",
+      "fechaOperacion": "2026-11-01T18:27:31.912738500Z",
+      "idUsuarioResponsable": 2,
+      "nombreUsuarioResponsable": "Juan Perez",
+      "eventoAnterior": {
+        "id": 32,
+        "titulo": "Charla de prueba e2e 1793557650192",
+        "descripcion": "Evento creado por pruebas/e2e-kafka.mjs",
+        "tipo": "CHARLA",
+        "fechaHora": "2026-11-21T18:00:00",
+        "duracionMinutos": 60,
+        "cupoMaximo": 20,
+        "movimiento": "Impresionismo",
+        "idCurador": 2,
+        "nombreCurador": "Juan Perez",
+        "idsInscriptos": [
+          1
+        ]
+      },
+      "eventoPosterior": {
+        "id": 32,
+        "titulo": "Charla de prueba e2e 1793557650192",
+        "descripcion": "Evento creado por pruebas/e2e-kafka.mjs",
+        "tipo": "CHARLA",
+        "fechaHora": "2026-11-21T19:30:00",
+        "duracionMinutos": 60,
+        "cupoMaximo": 35,
+        "movimiento": "Impresionismo",
+        "idCurador": 2,
+        "nombreCurador": "Juan Perez",
+        "idsInscriptos": [
+          1
+        ]
+      },
+      "camposModificados": [
+        "fechaHora",
+        "cupoMaximo"
+      ]
+    }
+  },
+  {
+    "titulo": "CANCELACION del evento 32 — partición 2, offset 5, clave \"32\"",
+    "mensaje": {
+      "idMensaje": "1019c58b-41ff-4524-a941-811d0e9efa67",
+      "versionEsquema": 1,
+      "tipo": "CANCELACION",
+      "idEvento": 32,
+      "tituloEvento": "Charla de prueba e2e 1793557650192",
+      "fechaHoraEvento": "2026-11-21T19:30:00",
+      "fechaOperacion": "2026-11-01T18:27:32.514312Z",
+      "idUsuarioResponsable": 2,
+      "nombreUsuarioResponsable": "Juan Perez",
+      "eventoAnterior": {
+        "id": 32,
+        "titulo": "Charla de prueba e2e 1793557650192",
+        "descripcion": "Evento creado por pruebas/e2e-kafka.mjs",
+        "tipo": "CHARLA",
+        "fechaHora": "2026-11-21T19:30:00",
+        "duracionMinutos": 60,
+        "cupoMaximo": 35,
+        "movimiento": "Impresionismo",
+        "idCurador": 2,
+        "nombreCurador": "Juan Perez",
+        "idsInscriptos": [
+          1
+        ]
+      },
+      "eventoPosterior": null,
+      "camposModificados": []
+    }
+  }
+]

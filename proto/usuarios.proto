@@ -25,6 +25,26 @@ service UsuariosService {
 
   // Interacciones del usuario, la más reciente primero.
   rpc ListarInteracciones(PerfilRequest) returns (InteraccionesResponse);
+
+  // Visitantes que tienen el movimiento entre sus preferidos (sin distinguir
+  // mayúsculas ni acentos). Lo usa el consumidor de notificaciones (Entrega 3)
+  // para avisar de un evento nuevo sin leer las tablas de usuarios.
+  rpc ListarVisitantesPorMovimiento(VisitantesPorMovimientoRequest) returns (VisitantesResponse);
+}
+
+message VisitantesPorMovimientoRequest {
+  string movimiento = 1;
+}
+
+message Visitante {
+  int64 id = 1;
+  string email = 2;
+  string nombre = 3;
+  string apellido = 4;
+}
+
+message VisitantesResponse {
+  repeated Visitante visitantes = 1;
 }
 
 message Preferencias {

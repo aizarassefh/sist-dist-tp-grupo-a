@@ -1,8 +1,10 @@
 package com.unla.museo.usuarios.grpc.service;
 
 import com.unla.museo.comun.GrpcRespuestas;
+import com.unla.museo.comun.Textos;
 import com.unla.museo.seguridad.entity.UsuarioEntity;
 import com.unla.museo.seguridad.repository.UsuarioRepository;
+import com.unla.museo.seguridad.util.Roles;
 import com.unla.museo.usuarios.entity.InteraccionUsuario;
 import com.unla.museo.usuarios.entity.InteraccionUsuario.TipoInteraccion;
 import com.unla.museo.usuarios.entity.PreferenciasUsuario;
@@ -14,6 +16,9 @@ import com.unla.museo.usuarios.grpc.PerfilRequest;
 import com.unla.museo.usuarios.grpc.Preferencias;
 import com.unla.museo.usuarios.grpc.RegistrarInteraccionRequest;
 import com.unla.museo.usuarios.grpc.UsuariosServiceGrpc;
+import com.unla.museo.usuarios.grpc.Visitante;
+import com.unla.museo.usuarios.grpc.VisitantesPorMovimientoRequest;
+import com.unla.museo.usuarios.grpc.VisitantesResponse;
 import com.unla.museo.usuarios.grpc.mapper.UsuariosGrpcMapper;
 import com.unla.museo.usuarios.repository.InteraccionUsuarioRepository;
 import io.grpc.Status;
@@ -102,6 +107,34 @@ public class UsuariosGrpcService extends UsuariosServiceGrpc.UsuariosServiceImpl
         InteraccionesResponse.Builder resultado = InteraccionesResponse.newBuilder();
         for (InteraccionUsuario i : interaccionRepository.findByUsuarioIdOrderByFechaDescIdDesc(usuario.getId())) {
             resultado.addInteracciones(UsuariosGrpcMapper.aInteraccion(i));
+        }
+        return resultado.build();
+    }
+
+    @Override
+    public void listarVisitantesPorMovimiento(VisitantesPorMovimientoRequest pedido,
+                                              StreamObserver<VisitantesResponse> respuesta) {
+        GrpcRespuestas.responder(respuesta, () -> listarVisitantesPorMovimiento(pedido));
+    }
+
+    // Se compara en memoria con Textos.sinAcentos (como los filtros del
+    // catálogo): el collation de MariaDB y el de H2 no tratan igual los acentos.
+    private VisitantesResponse listarVisitantesPorMovimiento(VisitantesPorMovimientoRequest pedido) {
+        String buscado = Textos.sinAcentos(pedido.getMovimiento());
+        VisitantesResponse.Builder resultado = VisitantesResponse.newBuilder();
+        if (buscado.isEmpty()) {
+            return resultado.build();
+        }
+        for (UsuarioEntity usuario : usuarioRepository.findByRolIdOrderByNombreAscApellidoAsc(Roles.VISITANTE)) {
+            boolean interesado = usuario.getPreferencias().getMovimientos().stream()
+                    .anyMatch(movimiento -> Textos.sinAcentos(movimiento).equals(buscado));
+            if (interesado) {
+                resultado.addVisitantes(Visitante.newBuilder()
+                        .setId(usuario.getId())
+                        .setEmail(usuario.getEmail())
+                        .setNombre(usuario.getNombre() != null ? usuario.getNombre() : "")
+                        .setApellido(usuario.getApellido() != null ? usuario.getApellido() : ""));
+            }
         }
         return resultado.build();
     }

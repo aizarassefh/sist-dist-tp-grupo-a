@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { pedir } from '../api/cliente'
+import { obtenerCategorias } from '../api/gateway'
 import { TIPOS_EVENTO } from '../tiposEvento'
+
+const MAX_MOVIMIENTO = 100
 
 function validar(valores) {
   const errores = {}
@@ -23,6 +26,9 @@ function validar(valores) {
   if (!valores.cupoMaximo || Number(valores.cupoMaximo) <= 0) {
     errores.cupoMaximo = 'El cupo tiene que ser un número mayor a 0.'
   }
+  if (valores.movimiento.trim().length > MAX_MOVIMIENTO) {
+    errores.movimiento = `El movimiento no puede superar los ${MAX_MOVIMIENTO} caracteres.`
+  }
   if (!valores.curadorId) {
     errores.curadorId = 'Elegí un curador responsable.'
   }
@@ -44,6 +50,9 @@ function FormularioEvento({
 }) {
   const [curadores, setCuradores] = useState([])
   const [erroresValidacion, setErroresValidacion] = useState({})
+  // null mientras carga; si el gateway falla queda null y se usa texto libre.
+  const [movimientos, setMovimientos] = useState(null)
+  const [gatewayFallo, setGatewayFallo] = useState(false)
 
   useEffect(() => {
     let cancelado = false
@@ -62,6 +71,35 @@ function FormularioEvento({
       cancelado = true
     }
   }, [])
+
+  useEffect(() => {
+    let cancelado = false
+
+    obtenerCategorias()
+      .then((datos) => {
+        if (!cancelado) {
+          setMovimientos((datos?.movimientos ?? []).map((movimiento) => movimiento.nombre))
+        }
+      })
+      .catch(() => {
+        // El movimiento es opcional: si el gateway no responde se pasa a un
+        // input de texto libre para no bloquear el alta del evento.
+        if (!cancelado) {
+          setGatewayFallo(true)
+        }
+      })
+
+    return () => {
+      cancelado = true
+    }
+  }, [])
+
+  // Si el evento ya tiene un movimiento que no figura en las categorías, se
+  // agrega como opción para que editar otro campo no lo borre sin querer.
+  const opcionesMovimiento = [...(movimientos ?? [])]
+  if (valores.movimiento && !opcionesMovimiento.includes(valores.movimiento)) {
+    opcionesMovimiento.push(valores.movimiento)
+  }
 
   function manejarSubmit(e) {
     e.preventDefault()
@@ -182,6 +220,40 @@ function FormularioEvento({
 
         {erroresValidacion.cupoMaximo && (
           <p className="campo-error">{erroresValidacion.cupoMaximo}</p>
+        )}
+      </div>
+
+      <div className="campo">
+        <label htmlFor="movimiento">
+          Movimiento artístico (opcional)
+        </label>
+
+        {gatewayFallo ? (
+          <input
+            id="movimiento"
+            type="text"
+            maxLength={MAX_MOVIMIENTO}
+            value={valores.movimiento}
+            onChange={(e) => onCambiarCampo('movimiento', e.target.value)}
+          />
+        ) : (
+          <select
+            id="movimiento"
+            value={valores.movimiento}
+            onChange={(e) => onCambiarCampo('movimiento', e.target.value)}
+          >
+            <option value="">Sin movimiento</option>
+
+            {opcionesMovimiento.map((nombre) => (
+              <option key={nombre} value={nombre}>
+                {nombre}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {erroresValidacion.movimiento && (
+          <p className="campo-error">{erroresValidacion.movimiento}</p>
         )}
       </div>
 
