@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ErrorApi, mensajeDeError, pedir } from '../api/cliente'
-import { esGestor } from '../roles'
+import { esGestor } from '../router/roles'
 import { nombreTipo } from '../tiposEvento'
 import { partesDeFecha, yaComenzo } from '../fechas'
 import CupoEvento from '../components/CupoEvento'

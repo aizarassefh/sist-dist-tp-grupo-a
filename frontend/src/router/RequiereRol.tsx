@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { tieneRol } from '../roles'
+import { tieneRol } from './roles'
 
 // El backend es el que realmente protege los datos; esto evita que un
 // usuario sin permiso que escribe la URL a mano vea una pantalla rota.

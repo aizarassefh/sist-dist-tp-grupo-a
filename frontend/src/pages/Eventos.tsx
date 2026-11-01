@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorApi, mensajeDeError, pedir } from '../api/cliente'
-import { esGestor } from '../roles'
+import { esGestor } from '../router/roles'
 import { CAMPOS_FILTRO_EVENTOS, filtrosDesdeBusqueda, filtrosParaGuardar } from '../filtrosEventos'
 import FiltrosEventos from '../components/FiltrosEventos'
 import ResumenFiltros from '../components/ResumenFiltros'

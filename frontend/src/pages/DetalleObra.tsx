@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client/react'
 import { OBRA_DETALLE_QUERY } from '../graphql/queries'
 import { mensajeDeErrorGateway, registrarInteraccion } from '../api/gateway'
-import { ROLES, tieneRol } from '../roles'
+import { ROLES, tieneRol } from '../router/roles'
 import ImagenObra from '../components/ImagenObra'
 
 function DetalleObra({ usuario }) {

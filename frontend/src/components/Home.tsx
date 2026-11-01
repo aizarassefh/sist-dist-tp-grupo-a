@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import ImagenObra from './ImagenObra'
-import { ROLES, esGestor, tieneRol } from '../roles'
+import { ROLES, esGestor, tieneRol } from '../router/roles'
 
 // Un índice en filas y no tres tarjetas iguales: cada sección se nombra con
 // lo que se hace ahí.
