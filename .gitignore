@@ -32,3 +32,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Documentos de entrega (fuera del repo) ###
+docs/entrega-*/
+docs/PLAN.md

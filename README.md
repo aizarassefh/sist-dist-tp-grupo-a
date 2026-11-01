@@ -13,9 +13,6 @@ TP de Desarrollo de Software en Sistemas Distribuidos, UNLa. Grupo A.
   eventos publican novedades en **Kafka**; dos consumidores independientes
   generan las notificaciones de los visitantes y el historial de actividad.
 
-Documentos de entrega: [`docs/entrega-2/Entrega-2-Grupo-A.pdf`](docs/entrega-2/Entrega-2-Grupo-A.pdf)
-y [`docs/entrega-3/Entrega-3-Grupo-A.pdf`](docs/entrega-3/Entrega-3-Grupo-A.pdf).
-
 ## Estructura
 
 ```text
@@ -30,7 +27,7 @@ proto/              Contratos gRPC compartidos por Java y TypeScript
 frontend/           React + TypeScript + Vite (:5173)
 kafka/              Scripts para levantar Kafka sin Docker
 pruebas/            Pruebas de punta a punta contra todo levantado
-docs/               Contratos REST, de mensajería y documentos de entrega
+docs/               Contratos REST y de mensajería, y colección de Postman
 ```
 
 ```text
